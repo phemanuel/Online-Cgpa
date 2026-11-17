@@ -1,0 +1,5455 @@
+<?php
+
+namespace App\Http\Controllers;
+use App\Models\GradingSystem;
+use App\Models\Instructor;
+use App\Models\Registration;
+use App\Models\Result;
+use App\Models\ResultCompute;
+use App\Models\ResultPassMark;
+use App\Models\Course;
+use App\Models\CourseStudy;
+use App\Models\CourseStudyAll;
+use App\Models\StudentLevel;
+use App\Models\AdministratorControl;
+use App\Models\hod;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+
+
+class ResultController extends Controller
+{
+    //
+    public function resultMenu()
+    {
+        return view('layout.result-menu');
+    }
+
+    public function gradingSystem()
+    {
+        $user = auth()->user();
+        $rolePermission = $user->grading_system;
+
+        if($rolePermission != 1) {
+            return redirect()->back()->with('error', 'You do not have permission to this module.');
+        }
+
+        $grading = GradingSystem::first(); 
+        $passMark = ResultPassMArk::first();
+        //---Log Activity------
+                if (auth()->check()) {
+                    \App\Models\LogActivity::create([
+                        'user_id' => auth()->id(),
+                        'ip_address' => request()->ip(),
+                        'activity' => 'Grading System viewed by ' . auth()->user()->last_name . ' '. auth()->user()->first_name,
+                        'activity_date' => now(),
+                    ]);
+                }
+        return view('layout.grading', compact('grading','passMark'));
+    }
+
+    public function gradingSystemEdit()
+    {
+        $grading = GradingSystem::first();
+
+        return view('layout.grading-edit', compact('grading'));
+    }
+
+    public function gradingSystemEditAction(Request $request)
+    {
+        try {
+            // Validate the incoming request data
+            $validated = $request->validate([
+                'grade01' => 'required|integer|min:0|max:100',
+                'grade02' => 'required|integer|min:0|max:100',
+                'unit01' => 'required|numeric|regex:/^\d+(\.\d{1,2})?$/', // Allow decimal values (up to 2 decimal places)
+                'lgrade1' => 'required|string|max:4',
+                'grade11' => 'required|integer|min:0|max:100',
+                'grade12' => 'required|integer|min:0|max:100',
+                'unit02' => 'required|numeric|regex:/^\d+(\.\d{1,2})?$/', // Allow decimal values (up to 2 decimal places)
+                'lgrade2' => 'required|string|max:4',
+                'grade21' => 'required|integer|min:0|max:100',
+                'grade22' => 'required|integer|min:0|max:100',
+                'unit03' => 'required|numeric|regex:/^\d+(\.\d{1,2})?$/', // Allow decimal values (up to 2 decimal places)
+                'lgrade3' => 'required|string|max:4',
+                'grade31' => 'required|integer|min:0|max:100',
+                'grade32' => 'required|integer|min:0|max:100',
+                'unit04' => 'required|numeric|regex:/^\d+(\.\d{1,2})?$/', // Allow decimal values (up to 2 decimal places)
+                'lgrade4' => 'required|string|max:4',
+                'grade41' => 'required|integer|min:0|max:100',
+                'grade42' => 'required|integer|min:0|max:100',
+                'unit05' => 'required|numeric|regex:/^\d+(\.\d{1,2})?$/', // Allow decimal values (up to 2 decimal places)
+                'lgrade5' => 'required|string|max:4',
+                'grade51' => 'required|integer|min:0|max:100',
+                'grade52' => 'required|integer|min:0|max:100',
+                'unit06' => 'required|numeric|regex:/^\d+(\.\d{1,2})?$/', // Allow decimal values (up to 2 decimal places)
+                'lgrade6' => 'required|string|max:4',
+            ]);
+
+            // Assuming there's a single grading record to update
+            $grading = GradingSystem::first();
+
+            if (!$grading) {
+                return redirect()->back()->withErrors('Grading record not found.');
+            }
+
+            // Update the grading record
+            $grading->update([
+                'grade01' => $validated['grade01'],
+                'grade02' => $validated['grade02'],
+                'unit01' => $validated['unit01'],
+                'lgrade1' => $validated['lgrade1'],
+                'grade11' => $validated['grade11'],
+                'grade12' => $validated['grade12'],
+                'unit02' => $validated['unit02'],
+                'lgrade2' => $validated['lgrade2'],
+                'grade21' => $validated['grade21'],
+                'grade22' => $validated['grade22'],
+                'unit03' => $validated['unit03'],
+                'lgrade3' => $validated['lgrade3'],
+                'grade31' => $validated['grade31'],
+                'grade32' => $validated['grade32'],
+                'unit04' => $validated['unit04'],
+                'lgrade4' => $validated['lgrade4'],
+                'grade41' => $validated['grade41'],
+                'grade42' => $validated['grade42'],
+                'unit05' => $validated['unit05'],
+                'lgrade5' => $validated['lgrade5'],
+                'grade51' => $validated['grade51'],
+                'grade52' => $validated['grade52'],
+                'unit06' => $validated['unit06'],
+                'lgrade6' => $validated['lgrade6'],
+            ]);
+
+            //---Log Activity------
+                if (auth()->check()) {
+                    \App\Models\LogActivity::create([
+                        'user_id' => auth()->id(),
+                        'ip_address' => request()->ip(),
+                        'activity' => 'Grading system updated by ' . auth()->user()->last_name . ' '. auth()->user()->first_name,
+                        'activity_date' => now(),
+                    ]);
+                }
+
+            return redirect()->route('grading')->with('success', 'Grading System updated successfully.');
+
+        } catch (\Exception $e) {
+            // Log the error message
+            Log::error('Error updating grading system: ' . $e->getMessage());
+
+            // Return an error response
+            return redirect()->back()->withErrors('An error occurred while updating the grading system. Please try again.');
+        }
+    }
+
+    public function scoreSheet()
+    {
+        $user = auth()->user();
+        $rolePermission = $user->score_sheet;
+
+        if($rolePermission != 1) {
+            return redirect()->back()->with('error', 'You do not have permission to this module.');
+        }
+
+        return redirect()->route('page-development');
+    }
+
+    public function resultEntry()
+    {
+        $user = auth()->user();
+        $rolePermission = $user->result_entry;
+
+        if($rolePermission != 1) {
+            return redirect()->back()->with('error', 'You do not have permission to this module.');
+        }
+
+        if($user->user_type_status == 1 OR $user->user_type_status == 2) {
+            return redirect()->route('result-entry-admin');
+        }
+        else{
+            $assignedCourse = Instructor::where('instructor_id', $user->id)->get();
+
+            if($assignedCourse->count() == 0) {
+                return redirect()->back()->with('error','You have not been assigned to any courses.');
+            }
+
+            //---Log Activity------
+                if (auth()->check()) {
+                    \App\Models\LogActivity::create([
+                        'user_id' => auth()->id(),
+                        'ip_address' => request()->ip(),
+                        'activity' => 'Result entry viewed by ' . auth()->user()->last_name . ' '. auth()->user()->first_name,
+                        'activity_date' => now(),
+                    ]);
+                }
+
+            return view('layout.result-entry', compact('assignedCourse'));
+        }
+        
+    }
+
+    public function resultEntryAdmin()
+    {
+        $user = auth()->user();
+        $rolePermission = $user->result_entry;
+
+        if($rolePermission != 1) {
+            return redirect()->back()->with('error', 'You do not have permission to this module.');
+        }
+
+        if ($user->user_type_status == 1 || $user->department == "ICT") {
+            // Superadmin or ICT department → see all programmes
+            $programmes = CourseStudyAll::orderBy('department', 'asc')->get();
+        } else {
+            // Other users → only see their department’s programmes
+            $programmes = CourseStudyAll::where('dept', $user->department)
+                ->orderBy('department', 'asc')
+                ->get();
+        }
+
+        $allLevel = StudentLevel::all();
+
+        return view('layout.result-entry-admin', compact('programmes', 'allLevel'));
+
+    }    
+
+    public function resultEntryView($id)
+    {
+        $user = auth()->user();
+        
+        // Get the assigned course details for the instructor
+        $assignedCourse = Instructor::where('id', $id)->first();
+        $admissionYear = $assignedCourse->session1;
+        $year = substr($admissionYear, 0, 4);
+
+        // Get the students registered in the course's programme and level for the given academic session
+        $students = Registration::where('course', $assignedCourse->programme)
+            // ->where('class', $assignedCourse->level)
+            ->where('admission_year', $year)
+            ->get();
+        if ($students->isEmpty()) {
+            return redirect()->back()->with('error', 'No students found for the selected programme, level, and academic session.');
+        }
+
+        // Get courses for the assigned course details
+        $courses = Course::where('course', $assignedCourse->programme)
+            ->where('level', $assignedCourse->level)
+            ->where('semester', $assignedCourse->semester)
+            ->get();
+
+        // Get existing results
+        $existingResults = Result::where('course', $assignedCourse->programme)
+            ->where('class', $assignedCourse->level)
+            ->where('session1', $year)
+            ->where('semester', $assignedCourse->semester)
+            ->get();
+
+        // Get admission numbers of students who already have results
+        $existingAdmissionNos = $existingResults->pluck('admission_no')->toArray();
+
+        // Create results for only students without result records
+        $newStudents = $students->filter(function ($student) use ($existingAdmissionNos) {
+            return !in_array($student->admission_no, $existingAdmissionNos);
+        });
+
+        foreach ($newStudents as $student) {
+            $resultData = new Result();
+            $resultData->admission_no = $student->admission_no;
+            $resultData->surname = $student->surname;
+            $resultData->first_name = $student->first_name;
+            $resultData->other_name = $student->other_name;
+            $resultData->semester = $assignedCourse->semester;
+            $resultData->course = $assignedCourse->programme;
+            $resultData->class = $assignedCourse->level;
+            $resultData->session1 = $year;
+            $resultData->picture_dir = $student->picture_dir;
+
+            $courseIndex = 1;
+            foreach ($courses as $course) {
+                $resultData->{'subject' . $courseIndex} = $course->course_title;
+                $resultData->{'ctitle' . $courseIndex} = $course->course_code;
+                $resultData->{'unit' . $courseIndex} = $course->course_unit;
+                $resultData->{'score' . $courseIndex} = 0;
+                $courseIndex++;
+            }
+
+            $resultData->no_of_course = $courses->count();
+            $resultData->save();
+        }
+
+        // Re-fetch updated results if new ones were added
+        $updatedResults = Result::where('course', $assignedCourse->programme)
+            ->where('class', $assignedCourse->level)
+            ->where('session1', $year)
+            ->where('semester', $assignedCourse->semester)
+            ->get();
+
+        // Prepare student scores
+        $studentScores = [];
+        foreach ($updatedResults as $result) {
+            foreach ($courses as $course) {
+                $courseIndex = $courses->search(function ($item) use ($course) {
+                    return $item->course_title === $course->course_title;
+                }) + 1;
+
+                $studentScores[$result->admission_no][$course->id] = $result->{'score' . $courseIndex} ?? 0;
+            }
+        }
+        $stdLevel = $assignedCourse->level;
+        $semester = $assignedCourse->semester;
+
+        //---Log Activity------
+                if (auth()->check()) {
+                    \App\Models\LogActivity::create([
+                        'user_id' => auth()->id(),
+                        'ip_address' => request()->ip(),
+                        'activity' => 'Result entry viewed by ' . auth()->user()->last_name . ' '. auth()->user()->first_name,
+                        'activity_date' => now(),
+                    ]);
+                }
+        return view('layout.result-entry-view', compact(
+            'students', 'updatedResults', 'assignedCourse', 'courses', 'studentScores', 'stdLevel', 'semester'
+        ));
+    }
+
+    private function getPreviousLevelAndSemester($stdLevel, $semester)
+    {
+        $levelOrder = ['NDI', 'NDII', 'HNDI', 'HNDII', '100', '200', '300'];
+        $currentIndex = array_search($stdLevel, $levelOrder);
+
+        if ($semester === 'First') {
+            // If it's the First semester, go back to previous level's Second semester
+            $prevSemester = 'Second';
+            $prevLevel = $currentIndex > 0 ? $levelOrder[$currentIndex - 1] : null;
+        } else {
+            // If it's Second semester, previous semester is First of the same level
+            $prevSemester = 'First';
+            $prevLevel = $stdLevel;
+        }
+
+        return [$prevLevel, $prevSemester];
+    }
+
+
+    public function resultEntryAdminView(Request $request)
+    {
+        $user = auth()->user();
+
+        $validated = $request->validate([
+            'acad_session' => 'required',
+            'programme' => 'required|string|exists:course_study_all,department',
+            'stdLevel' => 'required|string|in:100,200,300,NDI,NDII,HNDI,HNDII',
+            'semester' => 'required',
+        ]);
+
+        $admissionYear = $validated['acad_session'];
+        $programme = $validated['programme'];
+        $stdLevel = $validated['stdLevel'];
+        $semester = $validated['semester'];
+
+        $passMark = ResultPassMark::first();
+
+        // 🚫 If pass mark is not set or is 0
+        if (empty($passMark)) {
+            return redirect()
+                ->route('grading')
+                ->with('error', 'Please set the pass mark before proceeding.');
+        }
+
+        // 🚫 If pass mark is not set or is 0
+        if ($passMark->pass_mark <= 0) {
+            return redirect()
+                ->route('grading')
+                ->with('error', 'Please set the pass mark before proceeding.');
+        }
+
+        $curriculumCourses = Course::where('course', $programme)
+            ->where('level', $stdLevel)
+            ->where('semester', $semester)
+            ->get();
+
+        $totalCourses = $curriculumCourses->count();
+
+        $students = Registration::where('course', $programme)
+            ->where('admission_year', $admissionYear)
+            ->get();
+
+        if ($students->isEmpty()) {
+            return redirect()->back()->with('error', 'No students found for the selected programme, level, and academic session.');
+        }
+
+
+        $computationExists = DB::table('result_computes')
+        ->where('class', $stdLevel)
+        ->where('semester', $semester)
+        ->where('session1', $admissionYear)
+        ->exists();
+
+        
+        $studentsWithFailedCourses = [];
+
+        if ($computationExists) {
+
+            foreach ($students as $student) {
+
+                $result = DB::table('results')
+                    ->where('admission_no', $student->admission_no)
+                    ->where('class', $stdLevel)
+                    ->where('semester', $semester)
+                    ->where('session1', $admissionYear)
+                    ->first();
+
+                if (!$result) {
+                    continue;
+                }
+
+                $failedCoursesList = [];
+
+                for ($i = 1; $i <= 50; $i++) {
+
+                    $scoreCol  = 'score' . $i;
+                    $ctitleCol = 'ctitle' . $i;
+
+                    if (
+                        isset($result->$scoreCol) &&
+                        is_numeric($result->$scoreCol) &&
+                        $result->$scoreCol < $passMark->pass_mark
+                    ) {
+                        if (!empty($result->$ctitleCol)) {
+                            $failedCoursesList[] = trim($result->$ctitleCol);
+                        }
+                    }
+                }
+
+                if (!empty($failedCoursesList)) {
+                    $studentsWithFailedCourses[$student->admission_no] = $failedCoursesList;
+                }
+            }
+        }
+
+        $existingResults = Result::where('course', $programme)
+            ->where('class', $stdLevel)
+            ->where('session1', $admissionYear)
+            ->where('semester', $semester)
+            ->get();
+
+        $existingAdmissionNumbers = $existingResults->pluck('admission_no')->toArray();
+
+        foreach ($students as $student) {
+            if (!in_array($student->admission_no, $existingAdmissionNumbers)) {
+                // First-time result entry
+                $resultData = new Result();
+                $resultData->admission_no = $student->admission_no;
+                $resultData->surname = $student->surname;
+                $resultData->first_name = $student->first_name;
+                $resultData->other_name = $student->other_name;
+                $resultData->semester = $semester;
+                $resultData->course = $programme;
+                $resultData->class = $stdLevel;
+                $resultData->session1 = $admissionYear;
+                $resultData->picture_dir = $student->picture_dir;
+
+                $courseIndex = 1;
+
+                foreach ($curriculumCourses as $course) {
+                    $resultData->{'subject' . $courseIndex} = $course->course_title;
+                    $resultData->{'ctitle' . $courseIndex} = $course->course_code;
+                    $resultData->{'unit' . $courseIndex} = $course->course_unit;
+                    $resultData->{'score' . $courseIndex} = 0;
+                    $courseIndex++;
+                }
+
+                if (isset($studentsWithFailedCourses[$student->admission_no])) {
+                    foreach ($studentsWithFailedCourses[$student->admission_no] as $failedCourseTitle) {
+                        $resultData->{'subject' . $courseIndex} = $failedCourseTitle;
+                        $resultData->{'ctitle' . $courseIndex} = 'REPEAT';
+                        $resultData->{'unit' . $courseIndex} = 0;
+                        $resultData->{'score' . $courseIndex} = 0;
+                        $courseIndex++;
+                    }
+                }
+
+                $resultData->no_of_course = $courseIndex - 1;
+                $resultData->save();
+
+                $existingResults->push($resultData);
+            } else {
+                // Existing student result, check for missing new courses
+                $result = $existingResults->where('admission_no', $student->admission_no)->first();
+                $existingCourseCodes = [];
+
+                for ($i = 1; $i <= 50; $i++) {
+                    $code = $result->{'ctitle' . $i} ?? null;
+                    if ($code) {
+                        $existingCourseCodes[] = $code;
+                    }
+                }
+
+                $currentIndex = $result->no_of_course + 1;
+
+                foreach ($curriculumCourses as $course) {
+                    if (!in_array($course->course_code, $existingCourseCodes)) {
+                        $result->{'subject' . $currentIndex} = $course->course_title;
+                        $result->{'ctitle' . $currentIndex} = $course->course_code;
+                        $result->{'unit' . $currentIndex} = $course->course_unit;
+                        $result->{'score' . $currentIndex} = 0;
+                        $currentIndex++;
+                    }
+                }
+
+                $result->no_of_course = $currentIndex - 1;
+                $result->save();
+            }
+        }
+
+        // Prepare course list and scores
+        $currentCourses = collect();
+        $maxSubjects = 0;
+
+        foreach ($existingResults as $result) {
+            for ($i = 1; $i <= $result->no_of_course; $i++) {
+                $subject = $result->{'subject' . $i} ?? null;
+                $ctitle = $result->{'ctitle' . $i} ?? null;
+                $unit = $result->{'unit' . $i} ?? null;
+
+                if ($subject && $ctitle !== 'REPEAT') {
+                    $maxSubjects = max($maxSubjects, $i);
+                    $currentCourses->push((object)[
+                        'course_title' => $subject,
+                        'course_code' => $ctitle,
+                        'course_unit' => $unit,
+                        'index' => $i,
+                        'is_failed' => false,
+                    ]);
+                }
+            }
+        }
+
+        $currentCourses = $currentCourses->unique('course_code')->values();
+        $courses = $currentCourses;
+
+        $studentScores = [];
+        foreach ($existingResults as $result) {
+            for ($i = 1; $i <= $maxSubjects; $i++) {
+                $studentScores[$result->admission_no][$i] = $result->{'score' . $i} ?? 0;
+            }
+        }
+
+        // Log activity
+        \App\Models\LogActivity::create([
+            'user_id' => auth()->id(),
+            'ip_address' => request()->ip(),
+            'activity' => 'Result entry viewed by ' . auth()->user()->last_name . ' ' . auth()->user()->first_name,
+            'activity_date' => now(),
+        ]);
+
+        return view('layout.result-entry-view-admin', compact(
+            'students', 'existingResults', 'courses', 'studentScores',
+            'programme', 'admissionYear', 'stdLevel', 'semester', 'totalCourses', 'studentsWithFailedCourses',
+            'computationExists','passMark'
+        ));
+    }
+
+    private function getPreviousLevel($currentLevel)
+    {
+        $map = [
+            '100' => null,
+            'NDI' => null,
+            '200' => '100',
+            'NDII' => 'NDI',
+            '300' => '200',
+            'HNDI' => 'null',
+            'HNDII' => 'HNDI',
+        ];
+
+        return $map[$currentLevel] ?? null;
+    }
+
+
+    public function saveScore(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'student_id' => 'required|integer',
+                'course_id' => 'required|integer',
+                'course_index' => 'required|integer',
+                'course_title' => 'required|string',
+                'course_unit' => 'required|integer',
+                'course_code' => 'required|string',
+                'score' => 'required|numeric|min:0|max:100',
+            ]);
+
+            // Log information about the incoming request
+            Log::info('Processing score update.', $validated);            
+            $courseTitle = $validated['course_title'];
+            $courseCode = $validated['course_code'];
+            $admissionNo = $request->admission_no;
+            $currentScore = $request->score;
+
+            
+
+            // Find the result entry
+            $result = Result::where('admission_no', $request->admission_no)
+                ->where('class', $request->class)
+                ->where('semester', $request->semester)
+                ->first();
+
+            if ($result) {
+                $courseIndex = 'score' . $validated['course_index'];
+                $result->{$courseIndex} = $validated['score'];
+                $result->save();
+
+            //---Log Activity------
+                if (auth()->check()) {
+                    \App\Models\LogActivity::create([
+                        'user_id' => auth()->id(),
+                        'ip_address' => request()->ip(),
+                        'activity' => "{$admissionNo} Student score({$currentScore}) for {$courseTitle}({$courseCode}) updated by " . auth()->user()->last_name . ' '. auth()->user()->first_name,
+                        'activity_date' => now(),
+                    ]);
+                }
+
+                return response()->json(['message' => 'Score saved successfully.']);
+            }            
+
+            return response()->json(['message' => 'Result record not found.'], 404);
+
+        } catch (\Exception $e) {
+            Log::error('Error saving score.', [
+                'exception' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json(['message' => 'An error occurred.'], 500);
+        }
+    }
+
+    public function resultCompute()
+    {
+        $user = auth()->user();
+        $rolePermission = $user->result_compute;
+
+        if($rolePermission != 1) {
+            return redirect()->back()->with('error', 'You do not have permission to this module.');
+        }
+        
+        if ($user->user_type_status == 1 || $user->department == "ICT") {
+            // Superadmin or ICT department → see all programmes
+            $programmes = CourseStudyAll::orderBy('department', 'asc')->get();
+        } else {
+            // Other users → only see their department’s programmes
+            $programmes = CourseStudyAll::where('dept', $user->department)
+                ->orderBy('department', 'asc')
+                ->get();
+        }
+
+        $allLevel = StudentLevel::all();
+
+        return view('layout.result-compute', compact('programmes','allLevel'));
+    }
+
+    public function resultComputeAction(Request $request)
+    {
+        // Validate the incoming request data
+        $validatedData = $request->validate([
+            'stdLevel'     => 'required|string',
+            'semester'     => 'required|string',
+            'acad_session' => 'required|string',
+            'programme'    => 'required|string',
+        ]);
+
+        // Retrieve validated input
+        $level       = $validatedData['stdLevel'];
+        $semester    = ucfirst(strtolower($validatedData['semester'])); // Normalize to 'First', 'Second', etc.
+        $acadSession = $validatedData['acad_session'];
+        $programme   = $validatedData['programme'];
+
+        $courseStudy = CourseStudy::where('dept_name', $validatedData['programme'])->first();
+        $courseDuration = $courseStudy->dept_duration;
+       
+            
+        if($courseDuration == 2 && $programme == 'Diploma for Health Technicians'){
+            // Define the mapping of level and semester combinations to methods
+            $methodMap = [
+                '200'  => ['First' => 'firstSemester200',  'Second' => 'secondSemester200'],
+                '300'  => ['First' => 'firstSemester300',  'Second' => 'secondSemester300'],            
+               
+            ];
+           
+        }
+        
+         elseif($courseDuration == 2 && $programme == 'Diploma in Community Health(CHEW)(DE)'){
+            // Define the mapping of level and semester combinations to methods
+            $methodMap = [
+                '200'  => ['First' => 'firstSemester200',  'Second' => 'secondSemester200'],
+                '300'  => ['First' => 'firstSemester300',  'Second' => 'secondSemester300'],            
+               
+            ];
+           
+        }
+
+        elseif($courseDuration == 2){
+            // Define the mapping of level and semester combinations to methods
+            $methodMap = [
+                '100'  => ['First' => 'firstSemester100',  'Second' => 'secondSemester100'],
+                '200'  => ['First' => 'firstSemester300',  'Second' => 'secondSemester300'],                
+                'NDI'  => ['First' => 'firstSemester100',  'Second' => 'secondSemester100'],
+                'NDII' => ['First' => 'firstSemester300', 'Second' => 'secondSemester300'],
+                'HNDI'  => ['First' => 'firstSemester100',  'Second' => 'secondSemester100'],
+                'HNDII' => ['First' => 'firstSemester300', 'Second' => 'secondSemester300'],
+            ];
+        }
+       
+        elseif($courseDuration == 3){
+            // Define the mapping of level and semester combinations to methods
+            $methodMap = [
+                '100'  => ['First' => 'firstSemester100',  'Second' => 'secondSemester100'],
+                '200'  => ['First' => 'firstSemester200',  'Second' => 'secondSemester200'],
+                '300'  => ['First' => 'firstSemester300',  'Second' => 'secondSemester300'],
+                // 'NDI'  => ['First' => 'firstSemester100',  'Second' => 'secondSemester100'],
+                // 'NDII' => ['First' => 'firstSemester300', 'Second' => 'secondSemester300'],
+            ];
+        }
+        
+
+        // Check if the provided level and semester have a corresponding method
+        if (isset($methodMap[$level][$semester])) {
+            $method = $methodMap[$level][$semester];
+            return $this->$method($acadSession, $programme, $level, $semester, $request);
+        }        
+
+        // Handle other cases or return a default response
+        return redirect()->back()->with('error', 'Invalid selection made.');
+    }
+
+    public function firstSemester100($acadSession, $programme, $level, $semester, Request $request)
+    {
+        $collegeInfo = AdministratorControl::first();
+
+        // Check if result already computed
+        $resultComputeExists = ResultCompute::where('semester', $semester)
+            ->where('class', $level)
+            ->where('session1', $acadSession)
+            ->where('course', $programme)
+            ->exists();
+
+        if ($resultComputeExists) {
+            return redirect()->back()->with('error', 'The result has been computed already. You can either preview, or delete and recompute.');
+        }
+
+        //----Get total course unit--------
+        $courseUnitTotal = Course::where('course', $programme)
+        ->where('semester', $semester)
+        ->where('level', $level)
+        ->sum('course_unit');  
+
+        // Retrieve student results
+        $results = Result::where('semester', $semester)
+            ->where('class', $level)
+            ->where('session1', $acadSession)
+            ->where('course', $programme)
+            ->get();
+
+        $totalStudent  = $results->count();
+        
+
+        if ($results->isEmpty()) {
+            return redirect()->back()->with('error', 'The result is unavailable at the moment, please enter the results.');
+        }
+
+        $grading = GradingSystem::first();
+
+        // Define grading structure
+        $grades = [
+            ['min' => $grading->grade01, 'max' => $grading->grade02, 'unit' => $grading->unit01, 'letter_grade' => $grading->lgrade1],
+            ['min' => $grading->grade11, 'max' => $grading->grade12, 'unit' => $grading->unit02, 'letter_grade' => $grading->lgrade2],
+            ['min' => $grading->grade21, 'max' => $grading->grade22, 'unit' => $grading->unit03, 'letter_grade' => $grading->lgrade3],
+            ['min' => $grading->grade31, 'max' => $grading->grade32, 'unit' => $grading->unit04, 'letter_grade' => $grading->lgrade4],
+            ['min' => $grading->grade41, 'max' => $grading->grade42, 'unit' => $grading->unit05, 'letter_grade' => $grading->lgrade5],
+            ['min' => $grading->grade51, 'max' => $grading->grade52, 'unit' => $grading->unit06, 'letter_grade' => $grading->lgrade6],
+        ];
+
+        // Initialize studentData
+        $studentData = [];
+
+        foreach ($results as $index => $result) {
+            $totalPassedCourses = 0;
+            $totalFailedCourses = 0;
+            $totalCourseUnits = 0;
+            $gpaPoints = 0;
+            $failedTitles = [];
+
+            // Build student info
+            $studentData[$index] = [
+                'stuno' => $result->admission_no,
+                'stusurname' => $result->surname . ' ' . $result->firstname . ' ' . $result->othername,
+                'surname' => $result->surname,
+                'firstname' => $result->first_name,
+                'othername' => $result->other_name,
+                'class' => $result->class,
+                'noofcoursekeep' => $result->no_of_course,
+                'studpicture' => $result->picture_dir,
+                'coursekeep' => $result->course,
+                'courses' => [],
+            ];
+
+            // Loop through up to 15 courses
+            for ($i = 0; $i < 15; $i++) {
+                $scoreField = 'score' . ($i + 1);
+                $unitField = 'unit' . ($i + 1);
+                $titleField = 'ctitle' . ($i + 1);
+                $subjectField = 'subject'. ($i + 1);
+
+                $examScore = $result->$scoreField ?? 0;
+                $courseUnit = (int) $result->$unitField ?? 0;                
+                $courseTitle = trim($result->$titleField ?? '');
+                $subjectTitle = trim($result->$subjectField ?? '');
+
+                // Save raw scores and titles
+                $studentData[$index]['courses'][$i] = [
+                    'subjectTitle' => $subjectTitle,
+                    'courseTitle' => $courseTitle,
+                    'courseUnit' => $courseUnit,
+                    'examScore' => $examScore,
+                    'grade' => 'F',  // Default grade if score is less than 50
+                ];
+
+                if (empty($courseTitle)) {
+                    continue;
+                }
+
+                // $totalCourseUnits += $courseUnit;
+                $totalCourseUnits = $courseUnitTotal;
+
+                // Grade computation
+                $gradeUnit = 0;
+                $letter = 'F';
+                foreach ($grades as $grade) {
+                    if ($examScore >= $grade['min'] && $examScore <= $grade['max']) {
+                        $gradeUnit = $grade['unit'];
+                        $letter = $grade['letter_grade'];
+                        break;
+                    }
+                }
+
+                if ($examScore >= 50) {
+                    $totalPassedCourses++;
+                    $gpaPoints += $courseUnit * $gradeUnit;
+                } else {
+                    if ($examScore > 0) {
+                        $failedTitles[] = $courseTitle;
+                        $totalFailedCourses++;
+                    }
+                }
+
+                // Assign grade to the course
+                $studentData[$index]['courses'][$i]['grade'] = $letter;
+            }
+
+            $studentData[$index]['totalPassed'] = $totalPassedCourses;
+            $studentData[$index]['totalFailed'] = $totalFailedCourses;
+            $studentData[$index]['totalUnits'] = $totalCourseUnits;
+            $studentData[$index]['failedRemarks'] = $failedTitles;
+            $studentData[$index]['totalGradePoints'] = $gpaPoints;
+
+            // GPA & Letter Grade
+            if ($totalCourseUnits > 0) {
+                $gpa = $gpaPoints / $totalCourseUnits;
+                $studentData[$index]['totalGPA'] = round($gpa, 2);
+
+                if ($gpa >= $grading->grade51) {
+                    $letterGrade = $grading->lgrade6;
+                } elseif ($gpa >= $grading->grade41) {
+                    $letterGrade = $grading->lgrade5;
+                } elseif ($gpa >= $grading->grade31) {
+                    $letterGrade = $grading->lgrade4;
+                } elseif ($gpa >= $grading->grade21) {
+                    $letterGrade = $grading->lgrade3;
+                } elseif ($gpa >= $grading->grade11) {
+                    $letterGrade = $grading->lgrade2;
+                } else {
+                    $letterGrade = $grading->lgrade1;
+                }
+
+                $studentData[$index]['letterGrade'] = $letterGrade;
+            }
+
+            $studentData[$index]['remarks'] = $totalFailedCourses > 0 ? 'HAS CARRYOVER' : 'PASSED ALL';
+        }
+
+        // Paginate and get current student data
+        $page = $request->query('page', 1);  // Get the current page or default to page 1
+        $resultsPerPage = 1;  // This can be adjusted depending on how many results you want per page
+
+        $paginatedResults = Result::where('semester', $semester)
+            ->where('class', $level)
+            ->where('session1', $acadSession)
+            ->where('course', $programme)
+            ->paginate($resultsPerPage);
+
+        $total = $paginatedResults->total(); // Get the total number of records
+        //---save results to db-----
+        foreach ($studentData as $index => $data) {
+            $compute = new \App\Models\ResultCompute();
+        
+            $compute->admission_no = $data['stuno'] ?? '';
+            $compute->surname = $data['surname'] ?? '';
+            $compute->first_name = $data['firstname'] ?? '';
+            $compute->other_name = $data['othername'] ?? '';
+            $compute->student_full_name = $data['surname'] . ' ' . $data['firstname'] . ' ' . $data['othername'];
+            $compute->class = $data['class'] ?? '';
+            $compute->semester = $semester;
+            $compute->session1 = $acadSession;
+            $compute->course = $data['coursekeep'] ?? '';
+            $compute->no_of_course = $data['noofcoursekeep'] ?? 0;
+            $compute->picture_dir = $data['studpicture'] ?? '';
+            $compute->gpa = $data['totalGPA'] ?? 0;
+            $compute->total_grade_point = $data['totalGradePoints'] ?? 0;
+            $compute->total_course_unit = $data['totalUnits'] ?? 0;
+            $compute->total_failed_course = $data['totalFailed'] ?? 0;
+            $compute->failed_course = !empty($data['failedRemarks']) ? implode(', ', $data['failedRemarks']) : '';
+            $compute->remark = $data['remarks'] ?? 'PASSED ALL';
+        
+            if (!empty($data['courses'])) {
+                foreach ($data['courses'] as $i => $course) {
+                    $col = $i + 1;
+                    if ($col > 19) break;
+        
+                    $unit = $course['courseUnit'] ?? 0;
+                    $score = $course['examScore'] ?? 0;
+                    $gradePoint = 0;
+                    $letterGrade = 'F';
+        
+                    // Determine grade and point based on grading scheme
+                    foreach ($grades as $grade) {
+                        if ($score >= $grade['min'] && $score <= $grade['max']) {
+                            $gradePoint = $grade['unit'];
+                            $letterGrade = $grade['letter_grade'];
+                            break;
+                        }
+                    }
+        
+                    $compute["subject{$col}"] = $course['subjectTitle'] ?? '';
+                    $compute["score{$col}"] = $score;
+                    $compute["unit{$col}"] = $unit;
+                    $compute["subjectgrade{$col}"] = $letterGrade ?? '';
+                    $compute["ctitle{$col}"] = $course['courseTitle'] ?? '';
+                    $compute["ctotal{$col}"] = $unit * $gradePoint;
+                }
+            }
+        
+            if (!empty($data['failedRemarks'])) {
+                foreach ($data['failedRemarks'] as $i => $fail) {
+                    if ($i < 15) {
+                        $compute["carryover" . ($i + 1)] = $fail;
+                    }
+                }
+            }
+            $compute->sn = $index + 1;
+            $compute->save();            
+
+        }
+        //---Log Activity------
+                if (auth()->check()) {
+                    \App\Models\LogActivity::create([
+                        'user_id' => auth()->id(),
+                        'ip_address' => request()->ip(),
+                        'activity' => "Student results for {$acadSession} {$programme} {$level} {$semester} computed by " . auth()->user()->last_name . ' ' . auth()->user()->first_name,
+                        'activity_date' => now(),
+                    ]);
+                }
+        return redirect()->route('result-compute')->with('success' , 'Result Computed Successfuly.');
+        
+    }
+
+    public function secondSemester100($acadSession, $programme, $level, $semester, Request $request)
+{
+    $collegeInfo = AdministratorControl::first();
+
+    try {
+
+        // ---------------------------------------------------------
+        // Check if second semester result has already been computed
+        // ---------------------------------------------------------
+        $resultComputeExists = ResultCompute::where('semester', $semester)
+            ->where('class', $level)
+            ->where('session1', $acadSession)
+            ->where('course', $programme)
+            ->exists();
+
+        if ($resultComputeExists) {
+            return redirect()->back()->with(
+                'error',
+                'The result has been computed already. You can either preview, or delete and recompute.'
+            );
+        }
+
+
+        // ---------------------------------------------------------
+        // Get total course unit for the second semester
+        // ---------------------------------------------------------
+        $courseUnitTotal = Course::where('course', $programme)
+            ->where('semester', $semester)
+            ->where('level', $level)
+            ->sum('course_unit');
+
+
+        // ---------------------------------------------------------
+        // Retrieve FIRST SEMESTER computed results
+        // ---------------------------------------------------------
+        $stdGpaFirst = ResultCompute::where('semester', 'First')
+            ->where('class', $level)
+            ->where('session1', $acadSession)
+            ->where('course', $programme)
+            ->get();
+
+
+        if ($stdGpaFirst->isEmpty()) {
+            return redirect()->back()->with(
+                'error',
+                'The First semester results are not available.'
+            );
+        }
+
+
+        // ---------------------------------------------------------
+        // Retrieve SECOND SEMESTER student results
+        // ---------------------------------------------------------
+        $results = Result::where('semester', $semester)
+            ->where('class', $level)
+            ->where('session1', $acadSession)
+            ->where('course', $programme)
+            ->get();
+
+
+        if ($results->isEmpty()) {
+            return redirect()->back()->with(
+                'error',
+                'The result is unavailable at the moment, please enter the results.'
+            );
+        }
+
+
+        // ---------------------------------------------------------
+        // Grading system
+        // ---------------------------------------------------------
+        $grading = GradingSystem::first();
+
+        if (!$grading) {
+            return redirect()->back()->with(
+                'error',
+                'Grading system has not been configured.'
+            );
+        }
+
+
+        // ---------------------------------------------------------
+        // Define grading structure
+        // ---------------------------------------------------------
+        $grades = [
+            [
+                'min' => $grading->grade01,
+                'max' => $grading->grade02,
+                'unit' => $grading->unit01,
+                'letter_grade' => $grading->lgrade1
+            ],
+            [
+                'min' => $grading->grade11,
+                'max' => $grading->grade12,
+                'unit' => $grading->unit02,
+                'letter_grade' => $grading->lgrade2
+            ],
+            [
+                'min' => $grading->grade21,
+                'max' => $grading->grade22,
+                'unit' => $grading->unit03,
+                'letter_grade' => $grading->lgrade3
+            ],
+            [
+                'min' => $grading->grade31,
+                'max' => $grading->grade32,
+                'unit' => $grading->unit04,
+                'letter_grade' => $grading->lgrade4
+            ],
+            [
+                'min' => $grading->grade41,
+                'max' => $grading->grade42,
+                'unit' => $grading->unit05,
+                'letter_grade' => $grading->lgrade5
+            ],
+            [
+                'min' => $grading->grade51,
+                'max' => $grading->grade52,
+                'unit' => $grading->unit06,
+                'letter_grade' => $grading->lgrade6
+            ],
+        ];
+
+
+        // ---------------------------------------------------------
+        // IMPORTANT:
+        // Build first semester data using ADMISSION NUMBER
+        // instead of collection index.
+        // ---------------------------------------------------------
+        $firstSemesterData = [];
+
+        foreach ($stdGpaFirst as $firstResult) {
+
+            $admissionNo = trim($firstResult->admission_no);
+
+            if (empty($admissionNo)) {
+                continue;
+            }
+
+            $firstSemesterData[$admissionNo] = [
+                'gpa' => (float) $firstResult->gpa,
+                'totalFailedCourses' => (int) $firstResult->total_failed_course,
+                'totalCourseUnits' => (float) $firstResult->total_course_unit,
+                'totalGradePoints' => (float) $firstResult->total_grade_point,
+            ];
+        }
+
+
+        // ---------------------------------------------------------
+        // Student data to be saved
+        // ---------------------------------------------------------
+        $studentData = [];
+
+
+        // ---------------------------------------------------------
+        // Process SECOND SEMESTER results
+        // ---------------------------------------------------------
+        foreach ($results as $result) {
+
+            $admissionNo = trim($result->admission_no);
+
+
+            // -----------------------------------------------------
+            // Find THIS student's first semester result
+            // -----------------------------------------------------
+            if (!isset($firstSemesterData[$admissionNo])) {
+
+                \Log::warning(
+                    'First semester result not found for student during second semester computation.',
+                    [
+                        'admission_no' => $admissionNo,
+                        'session' => $acadSession,
+                        'level' => $level,
+                        'programme' => $programme,
+                        'semester' => $semester,
+                    ]
+                );
+
+                // Do NOT treat missing first semester GPA as 0.
+                continue;
+            }
+
+
+            // Get this student's first semester information
+            $firstData = $firstSemesterData[$admissionNo];
+
+
+            // -----------------------------------------------------
+            // Initialize student calculations
+            // -----------------------------------------------------
+            $totalPassedCourses = 0;
+            $totalFailedCourses = 0;
+            $totalCourseUnits = 0;
+            $gpaPoints = 0;
+            $failedTitles = [];
+
+
+            // -----------------------------------------------------
+            // Build student information
+            // -----------------------------------------------------
+            $student = [
+                'stuno' => $admissionNo,
+
+                'stusurname' =>
+                    $result->surname . ' ' .
+                    $result->firstname . ' ' .
+                    $result->othername,
+
+                'surname' => $result->surname,
+                'firstname' => $result->first_name,
+                'othername' => $result->other_name,
+
+                'class' => $result->class,
+
+                'noofcoursekeep' => $result->no_of_course,
+
+                'studpicture' => $result->picture_dir,
+
+                'coursekeep' => $result->course,
+
+                'courses' => [],
+            ];
+
+
+            // -----------------------------------------------------
+            // Process up to 15 courses
+            // -----------------------------------------------------
+            for ($i = 0; $i < 15; $i++) {
+
+                $scoreField = 'score' . ($i + 1);
+                $unitField = 'unit' . ($i + 1);
+                $titleField = 'ctitle' . ($i + 1);
+                $subjectField = 'subject' . ($i + 1);
+
+
+                $examScore = $result->$scoreField ?? 0;
+
+                $courseUnit = (int) ($result->$unitField ?? 0);
+
+                $courseTitle = trim($result->$titleField ?? '');
+
+                $subjectTitle = trim($result->$subjectField ?? '');
+
+
+                // -------------------------------------------------
+                // Save raw course information
+                // -------------------------------------------------
+                $student['courses'][$i] = [
+                    'subjectTitle' => $subjectTitle,
+                    'courseTitle' => $courseTitle,
+                    'courseUnit' => $courseUnit,
+                    'examScore' => $examScore,
+                    'grade' => 'F',
+                ];
+
+
+                // Skip empty course
+                if (empty($courseTitle)) {
+                    continue;
+                }
+
+
+                // -------------------------------------------------
+                // Use the configured total course unit
+                // -------------------------------------------------
+                $totalCourseUnits = $courseUnitTotal;
+
+
+                // -------------------------------------------------
+                // Determine grade
+                // -------------------------------------------------
+                $gradeUnit = 0;
+                $letter = 'F';
+
+
+                foreach ($grades as $grade) {
+
+                    if (
+                        $examScore >= $grade['min'] &&
+                        $examScore <= $grade['max']
+                    ) {
+
+                        $gradeUnit = $grade['unit'];
+                        $letter = $grade['letter_grade'];
+
+                        break;
+                    }
+                }
+
+
+                // -------------------------------------------------
+                // Passed / failed courses
+                // -------------------------------------------------
+                if ($examScore >= 50) {
+
+                    $totalPassedCourses++;
+
+                    $gpaPoints += $courseUnit * $gradeUnit;
+
+                } else {
+
+                    if ($examScore > 0) {
+
+                        $failedTitles[] = $courseTitle;
+
+                        $totalFailedCourses++;
+                    }
+                }
+
+
+                // Store grade
+                $student['courses'][$i]['grade'] = $letter;
+            }
+
+
+            // -----------------------------------------------------
+            // Second semester totals
+            // -----------------------------------------------------
+            $student['totalPassed'] = $totalPassedCourses;
+
+            $student['totalFailed'] = $totalFailedCourses;
+
+            $student['totalUnits'] = $totalCourseUnits;
+
+            $student['failedRemarks'] = $failedTitles;
+
+            $student['totalGradePoints'] = $gpaPoints;
+
+
+            // -----------------------------------------------------
+            // Calculate SECOND semester GPA
+            // -----------------------------------------------------
+            $secondGPA = 0;
+
+            if ($totalCourseUnits > 0) {
+
+                $secondGPA = $gpaPoints / $totalCourseUnits;
+
+                $student['totalGPA'] = round($secondGPA, 2);
+
+
+                // Determine GPA letter grade
+                if ($secondGPA >= $grading->grade51) {
+
+                    $letterGrade = $grading->lgrade6;
+
+                } elseif ($secondGPA >= $grading->grade41) {
+
+                    $letterGrade = $grading->lgrade5;
+
+                } elseif ($secondGPA >= $grading->grade31) {
+
+                    $letterGrade = $grading->lgrade4;
+
+                } elseif ($secondGPA >= $grading->grade21) {
+
+                    $letterGrade = $grading->lgrade3;
+
+                } elseif ($secondGPA >= $grading->grade11) {
+
+                    $letterGrade = $grading->lgrade2;
+
+                } else {
+
+                    $letterGrade = $grading->lgrade1;
+                }
+
+                $student['letterGrade'] = $letterGrade;
+
+            } else {
+
+                $student['totalGPA'] = 0;
+                $student['letterGrade'] = $grading->lgrade1;
+            }
+
+
+            // -----------------------------------------------------
+            // Second semester remark
+            // -----------------------------------------------------
+            $student['remarks'] =
+                $totalFailedCourses > 0
+                    ? 'HAS CARRYOVER'
+                    : 'PASSED ALL';
+
+
+            // =====================================================
+            // COMBINE FIRST + SECOND SEMESTER
+            // =====================================================
+
+            $gpaFirst = $firstData['gpa'];
+
+            $firstFailedCourses = $firstData['totalFailedCourses'];
+
+            $firstCourseUnits = $firstData['totalCourseUnits'];
+
+            $firstGradePoints = $firstData['totalGradePoints'];
+
+
+            // -----------------------------------------------------
+            // Combined totals
+            // -----------------------------------------------------
+            $totalFailedCoursesCombined =
+                $totalFailedCourses + $firstFailedCourses;
+
+
+            $totalCourseUnitsCombined =
+                $totalCourseUnits + $firstCourseUnits;
+
+
+            $totalGradePointsCombined =
+                $gpaPoints + $firstGradePoints;
+
+
+            // -----------------------------------------------------
+            // Calculate CGPA using total grade points / total units
+            // -----------------------------------------------------
+            if ($totalCourseUnitsCombined > 0) {
+
+                $combinedGPA = round(
+                    $totalGradePointsCombined / $totalCourseUnitsCombined,
+                    2
+                );
+
+            } else {
+
+                $combinedGPA = 0;
+            }
+
+
+            // -----------------------------------------------------
+            // Combined remark
+            // -----------------------------------------------------
+            $combinedRemark =
+                $combinedGPA < 1.5
+                    ? 'Advised to withdraw'
+                    : (
+                        $totalFailedCoursesCombined > 3
+                            ? 'Repeat'
+                            : 'No Remark'
+                    );
+
+
+            // -----------------------------------------------------
+            // Store combined information
+            // -----------------------------------------------------
+            $student['gpaFirst'] = $gpaFirst;
+
+            $student['combinedGPA'] = $combinedGPA;
+
+            $student['combinedRemark'] = $combinedRemark;
+
+            $student['totalFailedCoursesCombined'] =
+                $totalFailedCoursesCombined;
+
+            $student['totalCourseUnitsCombined'] =
+                $totalCourseUnitsCombined;
+
+            $student['totalGradePointsCombined'] =
+                $totalGradePointsCombined;
+
+
+            // Add to student data using admission number
+            $studentData[$admissionNo] = $student;
+        }
+
+
+        // ---------------------------------------------------------
+        // If no students could be processed
+        // ---------------------------------------------------------
+        if (empty($studentData)) {
+
+            return redirect()->back()->with(
+                'error',
+                'No student could be computed because matching First semester results were not found.'
+            );
+        }
+
+
+        // =========================================================
+        // SAVE SECOND SEMESTER COMPUTED RESULTS
+        // =========================================================
+
+        foreach ($studentData as $admissionNo => $data) {
+
+            // -----------------------------------------------------
+            // Check if this student's second semester record exists
+            // -----------------------------------------------------
+            $existingRecord = ResultCompute::where(
+                    'admission_no',
+                    $admissionNo
+                )
+                ->where('semester', $semester)
+                ->where('session1', $acadSession)
+                ->where('class', $level)
+                ->where('course', $programme)
+                ->first();
+
+
+            if ($existingRecord) {
+                continue;
+            }
+
+
+            // -----------------------------------------------------
+            // Create new computed result
+            // -----------------------------------------------------
+            $compute = new \App\Models\ResultCompute();
+
+
+            // Student information
+            $compute->admission_no = $admissionNo;
+
+            $compute->surname = $data['surname'] ?? '';
+
+            $compute->first_name = $data['firstname'] ?? '';
+
+            $compute->other_name = $data['othername'] ?? '';
+
+            $compute->student_full_name =
+                ($data['surname'] ?? '') . ' ' .
+                ($data['firstname'] ?? '') . ' ' .
+                ($data['othername'] ?? '');
+
+            $compute->class = $data['class'] ?? '';
+
+            $compute->semester = $semester;
+
+            $compute->session1 = $acadSession;
+
+            $compute->course = $data['coursekeep'] ?? '';
+
+            $compute->no_of_course =
+                $data['noofcoursekeep'] ?? 0;
+
+            $compute->picture_dir =
+                $data['studpicture'] ?? '';
+
+
+            // -----------------------------------------------------
+            // Second semester totals
+            // -----------------------------------------------------
+            $compute->total_course_unit =
+                $data['totalUnits'] ?? 0;
+
+            $compute->total_grade_point =
+                $data['totalGradePoints'] ?? 0;
+
+            $compute->total_failed_course =
+                $data['totalFailed'] ?? 0;
+
+
+            // -----------------------------------------------------
+            // GPA information
+            // -----------------------------------------------------
+            $compute->gpa1 =
+                $data['gpaFirst'] ?? 0;
+
+            $compute->gpa =
+                $data['totalGPA'] ?? 0;
+
+            $compute->gpa2 =
+                $data['totalGPA'] ?? 0;
+
+
+            // -----------------------------------------------------
+            // Combined CGPA
+            // -----------------------------------------------------
+            $compute->cgpa =
+                $data['combinedGPA'] ?? 0;
+
+
+            // -----------------------------------------------------
+            // Combined totals
+            // -----------------------------------------------------
+            $compute->all_total_failed_course =
+                $data['totalFailedCoursesCombined'] ?? 0;
+
+            $compute->all_total_course_unit =
+                $data['totalCourseUnitsCombined'] ?? 0;
+
+            $compute->all_total_grade_point =
+                $data['totalGradePointsCombined'] ?? 0;
+
+
+            // -----------------------------------------------------
+            // Failed course remarks
+            // -----------------------------------------------------
+            $compute->failed_course =
+                !empty($data['failedRemarks'])
+                    ? implode(', ', $data['failedRemarks'])
+                    : '';
+
+
+            $compute->remark =
+                $data['remarks'] ?? 'PASSED ALL';
+
+            $compute->total_remark =
+                $data['combinedRemark'] ?? 'PASSED ALL';
+
+
+            // -----------------------------------------------------
+            // Store individual course data
+            // -----------------------------------------------------
+            if (!empty($data['courses'])) {
+
+                foreach ($data['courses'] as $i => $course) {
+
+                    $col = $i + 1;
+
+                    if ($col > 19) {
+                        break;
+                    }
+
+
+                    $unit =
+                        $course['courseUnit'] ?? 0;
+
+                    $score =
+                        $course['examScore'] ?? 0;
+
+                    $gradePoint = 0;
+
+                    $letterGrade = 'F';
+
+
+                    // Determine grade point
+                    foreach ($grades as $grade) {
+
+                        if (
+                            $score >= $grade['min'] &&
+                            $score <= $grade['max']
+                        ) {
+
+                            $gradePoint =
+                                $grade['unit'];
+
+                            $letterGrade =
+                                $grade['letter_grade'];
+
+                            break;
+                        }
+                    }
+
+
+                    $compute["subject{$col}"] =
+                        $course['subjectTitle'] ?? '';
+
+                    $compute["score{$col}"] =
+                        $score;
+
+                    $compute["unit{$col}"] =
+                        $unit;
+
+                    $compute["subjectgrade{$col}"] =
+                        $letterGrade;
+
+                    $compute["ctitle{$col}"] =
+                        $course['courseTitle'] ?? '';
+
+                    $compute["ctotal{$col}"] =
+                        $unit * $gradePoint;
+                }
+            }
+
+
+            // -----------------------------------------------------
+            // Store failed courses
+            // -----------------------------------------------------
+            if (!empty($data['failedRemarks'])) {
+
+                foreach ($data['failedRemarks'] as $i => $fail) {
+
+                    if ($i < 15) {
+
+                        $compute[
+                            'carryover' . ($i + 1)
+                        ] = $fail;
+                    }
+                }
+            }
+
+
+            // -----------------------------------------------------
+            // Serial number
+            // -----------------------------------------------------
+            $compute->sn = $compute->getConnection()
+                ->table($compute->getTable())
+                ->where('semester', $semester)
+                ->where('session1', $acadSession)
+                ->where('class', $level)
+                ->where('course', $programme)
+                ->count() + 1;
+
+
+            // -----------------------------------------------------
+            // Save
+            // -----------------------------------------------------
+            $compute->save();
+        }
+
+
+        // =========================================================
+        // LOG ACTIVITY
+        // =========================================================
+
+        if (auth()->check()) {
+
+            \App\Models\LogActivity::create([
+                'user_id' => auth()->id(),
+                'ip_address' => request()->ip(),
+                'activity' =>
+                    "Student results for {$acadSession} {$programme} {$level} {$semester} computed by "
+                    . auth()->user()->last_name . ' '
+                    . auth()->user()->first_name,
+                'activity_date' => now(),
+            ]);
+        }
+
+
+        // ---------------------------------------------------------
+        // Return
+        // ---------------------------------------------------------
+        return redirect()
+            ->route('result-compute')
+            ->with(
+                'success',
+                'Result Computed Successfully.'
+            );
+
+    } catch (\Throwable $e) {
+
+        // ---------------------------------------------------------
+        // Log error
+        // ---------------------------------------------------------
+        \Log::error(
+            'Second semester 100-level result computation failed.',
+            [
+                'session' => $acadSession,
+                'programme' => $programme,
+                'level' => $level,
+                'semester' => $semester,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]
+        );
+
+
+        return redirect()
+            ->back()
+            ->with(
+                'error',
+                'An error occurred while computing the result. Please check the log for details.'
+            );
+    }
+}
+
+    public function firstSemester200($acadSession, $programme, $level, $semester, Request $request)
+    {
+        $collegeInfo = AdministratorControl::first();
+
+        // Check if result already computed
+        $resultComputeExists = ResultCompute::where('semester', $semester)
+            ->where('class', $level)
+            ->where('session1', $acadSession)
+            ->where('course', $programme)
+            ->exists();
+
+        if ($resultComputeExists) {
+            return redirect()->back()->with('error', 'The result has been computed already. You can either preview, or delete and recompute.');
+        }
+
+        //----Get total course unit--------
+        $courseUnitTotal = Course::where('course', $programme)
+        ->where('semester', $semester)
+        ->where('level', $level)
+        ->sum('course_unit');
+
+        // Retrieve student results
+        $results = Result::where('semester', $semester)
+            ->where('class', $level)
+            ->where('session1', $acadSession)
+            ->where('course', $programme)
+            ->get();
+
+        $totalStudent  = $results->count();
+        
+
+        if ($results->isEmpty()) {
+            return redirect()->back()->with('error', 'The result is unavailable at the moment, please enter the results.');
+        }
+
+        $grading = GradingSystem::first();
+
+        // Define grading structure
+        $grades = [
+            ['min' => $grading->grade01, 'max' => $grading->grade02, 'unit' => $grading->unit01, 'letter_grade' => $grading->lgrade1],
+            ['min' => $grading->grade11, 'max' => $grading->grade12, 'unit' => $grading->unit02, 'letter_grade' => $grading->lgrade2],
+            ['min' => $grading->grade21, 'max' => $grading->grade22, 'unit' => $grading->unit03, 'letter_grade' => $grading->lgrade3],
+            ['min' => $grading->grade31, 'max' => $grading->grade32, 'unit' => $grading->unit04, 'letter_grade' => $grading->lgrade4],
+            ['min' => $grading->grade41, 'max' => $grading->grade42, 'unit' => $grading->unit05, 'letter_grade' => $grading->lgrade5],
+            ['min' => $grading->grade51, 'max' => $grading->grade52, 'unit' => $grading->unit06, 'letter_grade' => $grading->lgrade6],
+        ];
+
+        // Initialize studentData
+        $studentData = [];
+
+        foreach ($results as $index => $result) {
+            $totalPassedCourses = 0;
+            $totalFailedCourses = 0;
+            $totalCourseUnits = 0;
+            $gpaPoints = 0;
+            $failedTitles = [];
+
+            // Build student info
+            $studentData[$index] = [
+                'stuno' => $result->admission_no,
+                'stusurname' => $result->surname . ' ' . $result->firstname . ' ' . $result->othername,
+                'surname' => $result->surname,
+                'firstname' => $result->first_name,
+                'othername' => $result->other_name,
+                'class' => $result->class,
+                'noofcoursekeep' => $result->no_of_course,
+                'studpicture' => $result->picture_dir,
+                'coursekeep' => $result->course,
+                'courses' => [],
+            ];
+
+            // Loop through up to 15 courses
+            for ($i = 0; $i < 15; $i++) {
+                $scoreField = 'score' . ($i + 1);
+                $unitField = 'unit' . ($i + 1);
+                $titleField = 'ctitle' . ($i + 1);
+                $subjectField = 'subject'. ($i + 1);
+
+                $examScore = $result->$scoreField ?? 0;
+                $courseUnit = (int) $result->$unitField ?? 0;
+                $courseTitle = trim($result->$titleField ?? '');
+                $subjectTitle = trim($result->$subjectField ?? '');
+
+                // Save raw scores and titles
+                $studentData[$index]['courses'][$i] = [
+                    'subjectTitle' => $subjectTitle,
+                    'courseTitle' => $courseTitle,
+                    'courseUnit' => $courseUnit,
+                    'examScore' => $examScore,
+                    'grade' => 'F',  // Default grade if score is less than 50
+                ];
+
+                if (empty($courseTitle)) {
+                    continue;
+                }
+
+                // $totalCourseUnits += $courseUnit;
+                $totalCourseUnits = $courseUnitTotal;
+                // Grade computation
+                $gradeUnit = 0;
+                $letter = 'F';
+                foreach ($grades as $grade) {
+                    if ($examScore >= $grade['min'] && $examScore <= $grade['max']) {
+                        $gradeUnit = $grade['unit'];
+                        $letter = $grade['letter_grade'];
+                        break;
+                    }
+                }
+
+                if ($examScore >= 50) {
+                    $totalPassedCourses++;
+                    $gpaPoints += $courseUnit * $gradeUnit;
+                } else {
+                    if ($examScore > 0) {
+                        $failedTitles[] = $courseTitle;
+                        $totalFailedCourses++;
+                    }
+                }
+
+                // Assign grade to the course
+                $studentData[$index]['courses'][$i]['grade'] = $letter;
+            }
+
+            $studentData[$index]['totalPassed'] = $totalPassedCourses;
+            $studentData[$index]['totalFailed'] = $totalFailedCourses;
+            $studentData[$index]['totalUnits'] = $totalCourseUnits;
+            $studentData[$index]['failedRemarks'] = $failedTitles;
+            $studentData[$index]['totalGradePoints'] = $gpaPoints;
+
+            // GPA & Letter Grade
+            if ($totalCourseUnits > 0) {
+                $gpa = $gpaPoints / $totalCourseUnits;
+                $studentData[$index]['totalGPA'] = round($gpa, 2);
+
+                if ($gpa >= $grading->grade51) {
+                    $letterGrade = $grading->lgrade6;
+                } elseif ($gpa >= $grading->grade41) {
+                    $letterGrade = $grading->lgrade5;
+                } elseif ($gpa >= $grading->grade31) {
+                    $letterGrade = $grading->lgrade4;
+                } elseif ($gpa >= $grading->grade21) {
+                    $letterGrade = $grading->lgrade3;
+                } elseif ($gpa >= $grading->grade11) {
+                    $letterGrade = $grading->lgrade2;
+                } else {
+                    $letterGrade = $grading->lgrade1;
+                }
+
+                $studentData[$index]['letterGrade'] = $letterGrade;
+            }
+
+            $studentData[$index]['remarks'] = $totalFailedCourses > 0 ? 'HAS CARRYOVER' : 'PASSED ALL';
+        }
+
+        // Paginate and get current student data
+        $page = $request->query('page', 1);  // Get the current page or default to page 1
+        $resultsPerPage = 1;  // This can be adjusted depending on how many results you want per page
+
+        $paginatedResults = Result::where('semester', $semester)
+            ->where('class', $level)
+            ->where('session1', $acadSession)
+            ->where('course', $programme)
+            ->paginate($resultsPerPage);
+
+        $total = $paginatedResults->total(); // Get the total number of records
+        //---save results to db-----
+        foreach ($studentData as $index => $data) {
+            $compute = new \App\Models\ResultCompute();
+        
+            $compute->admission_no = $data['stuno'] ?? '';
+            $compute->surname = $data['surname'] ?? '';
+            $compute->first_name = $data['firstname'] ?? '';
+            $compute->other_name = $data['othername'] ?? '';
+            $compute->student_full_name = $data['surname'] . ' ' . $data['firstname'] . ' ' . $data['othername'];
+            $compute->class = $data['class'] ?? '';
+            $compute->semester = $semester;
+            $compute->session1 = $acadSession;
+            $compute->course = $data['coursekeep'] ?? '';
+            $compute->no_of_course = $data['noofcoursekeep'] ?? 0;
+            $compute->picture_dir = $data['studpicture'] ?? '';
+            $compute->gpa = $data['totalGPA'] ?? 0;
+            $compute->total_grade_point = $data['totalGradePoints'] ?? 0;
+            $compute->total_course_unit = $data['totalUnits'] ?? 0;
+            $compute->total_failed_course = $data['totalFailed'] ?? 0;
+            $compute->failed_course = !empty($data['failedRemarks']) ? implode(', ', $data['failedRemarks']) : '';
+            $compute->remark = $data['remarks'] ?? 'PASSED ALL';
+        
+            if (!empty($data['courses'])) {
+                foreach ($data['courses'] as $i => $course) {
+                    $col = $i + 1;
+                    if ($col > 19) break;
+        
+                    $unit = $course['courseUnit'] ?? 0;
+                    $score = $course['examScore'] ?? 0;
+                    $gradePoint = 0;
+                    $letterGrade = 'F';
+        
+                    // Determine grade and point based on grading scheme
+                    foreach ($grades as $grade) {
+                        if ($score >= $grade['min'] && $score <= $grade['max']) {
+                            $gradePoint = $grade['unit'];
+                            $letterGrade = $grade['letter_grade'];
+                            break;
+                        }
+                    }
+        
+                    $compute["subject{$col}"] = $course['subjectTitle'] ?? '';
+                    $compute["score{$col}"] = $score;
+                    $compute["unit{$col}"] = $unit;
+                    $compute["subjectgrade{$col}"] = $letterGrade ?? '';
+                    $compute["ctitle{$col}"] = $course['courseTitle'] ?? '';
+                    $compute["ctotal{$col}"] = $unit * $gradePoint;
+                }
+            }
+        
+            if (!empty($data['failedRemarks'])) {
+                foreach ($data['failedRemarks'] as $i => $fail) {
+                    if ($i < 15) {
+                        $compute["carryover" . ($i + 1)] = $fail;
+                    }
+                }
+            }
+            $compute->sn = $index + 1;
+            $compute->save();  
+
+        }
+        //---Log Activity------
+                if (auth()->check()) {
+                    \App\Models\LogActivity::create([
+                        'user_id' => auth()->id(),
+                        'ip_address' => request()->ip(),
+                        'activity' => "Student results for {$acadSession} {$programme} {$level} {$semester} computed by " . auth()->user()->last_name . ' ' . auth()->user()->first_name,
+                        'activity_date' => now(),
+                    ]);
+                }
+        return redirect()->route('result-compute')->with('success' , 'Result Computed Successfuly.');
+        
+    }
+
+        public function secondSemester200($acadSession, $programme, $level, $semester, Request $request)
+    {
+        try {
+            Log::info('Starting second semester 200-level result computation...', [
+                'session' => $acadSession,
+                'programme' => $programme,
+                'level' => $level,
+                'semester' => $semester,
+            ]);
+    
+            $collegeInfo = AdministratorControl::first();
+    
+            // ---------------------------------------------------------
+            // Check if second semester result has already been computed
+            // ---------------------------------------------------------
+            $resultComputeExists = ResultCompute::where('semester', $semester)
+                ->where('class', $level)
+                ->where('session1', $acadSession)
+                ->where('course', $programme)
+                ->exists();
+    
+            if ($resultComputeExists) {
+                return redirect()->back()->with(
+                    'error',
+                    'The result has been computed already. You can either preview, or delete and recompute.'
+                );
+            }
+    
+            // ---------------------------------------------------------
+            // Total course units for second semester
+            // ---------------------------------------------------------
+            $courseUnitTotal = Course::where('course', $programme)
+                ->where('semester', $semester)
+                ->where('level', $level)
+                ->sum('course_unit');
+    
+            // ---------------------------------------------------------
+            // Get FIRST semester computed results
+            // ---------------------------------------------------------
+            $stdGpaFirst = ResultCompute::where('semester', 'First')
+                ->where('class', $level)
+                ->where('session1', $acadSession)
+                ->where('course', $programme)
+                ->get();
+    
+            if ($stdGpaFirst->isEmpty()) {
+                return redirect()->back()->with(
+                    'error',
+                    'The First semester results are not available.'
+                );
+            }
+    
+            // ---------------------------------------------------------
+            // Index first semester data by admission number
+            // ---------------------------------------------------------
+            $firstSemesterData = [];
+    
+            foreach ($stdGpaFirst as $firstResult) {
+    
+                $admissionNo = trim((string) $firstResult->admission_no);
+    
+                if ($admissionNo === '') {
+                    continue;
+                }
+    
+                $firstSemesterData[$admissionNo] = [
+                    'gpa' => (float) ($firstResult->gpa ?? 0),
+                    'totalFailedCourses' => (int) ($firstResult->total_failed_course ?? 0),
+                    'totalCourseUnits' => (float) ($firstResult->total_course_unit ?? 0),
+                    'totalGradePoints' => (float) ($firstResult->total_grade_point ?? 0),
+                ];
+            }
+    
+            // ---------------------------------------------------------
+            // Get second semester results
+            // ---------------------------------------------------------
+            $results = Result::where('semester', $semester)
+                ->where('class', $level)
+                ->where('session1', $acadSession)
+                ->where('course', $programme)
+                ->get();
+    
+            if ($results->isEmpty()) {
+                return redirect()->back()->with(
+                    'error',
+                    'The result is unavailable at the moment, please enter the results.'
+                );
+            }
+    
+            $grading = GradingSystem::first();
+    
+            if (!$grading) {
+                return redirect()->back()->with(
+                    'error',
+                    'The grading system has not been configured.'
+                );
+            }
+    
+            // ---------------------------------------------------------
+            // Grading structure
+            // ---------------------------------------------------------
+            $grades = [
+                [
+                    'min' => $grading->grade01,
+                    'max' => $grading->grade02,
+                    'unit' => $grading->unit01,
+                    'letter_grade' => $grading->lgrade1
+                ],
+                [
+                    'min' => $grading->grade11,
+                    'max' => $grading->grade12,
+                    'unit' => $grading->unit02,
+                    'letter_grade' => $grading->lgrade2
+                ],
+                [
+                    'min' => $grading->grade21,
+                    'max' => $grading->grade22,
+                    'unit' => $grading->unit03,
+                    'letter_grade' => $grading->lgrade3
+                ],
+                [
+                    'min' => $grading->grade31,
+                    'max' => $grading->grade32,
+                    'unit' => $grading->unit04,
+                    'letter_grade' => $grading->lgrade4
+                ],
+                [
+                    'min' => $grading->grade41,
+                    'max' => $grading->grade42,
+                    'unit' => $grading->unit05,
+                    'letter_grade' => $grading->lgrade5
+                ],
+                [
+                    'min' => $grading->grade51,
+                    'max' => $grading->grade52,
+                    'unit' => $grading->unit06,
+                    'letter_grade' => $grading->lgrade6
+                ],
+            ];
+    
+            $studentData = [];
+    
+            // =========================================================
+            // CALCULATE SECOND SEMESTER
+            // =========================================================
+            foreach ($results as $result) {
+    
+                $admissionNo = trim((string) $result->admission_no);
+    
+                // -----------------------------------------------------
+                // Make sure first semester exists for this student
+                // -----------------------------------------------------
+                if (!isset($firstSemesterData[$admissionNo])) {
+    
+                    Log::warning('First semester result not found for student.', [
+                        'admission_no' => $admissionNo,
+                        'session' => $acadSession,
+                        'programme' => $programme,
+                        'level' => $level,
+                    ]);
+    
+                    // Do not allow missing first semester to become GPA 0
+                    continue;
+                }
+    
+                $firstData = $firstSemesterData[$admissionNo];
+    
+                $totalPassedCourses = 0;
+                $totalFailedCourses = 0;
+                $totalCourseUnits = 0;
+                $gpaPoints = 0;
+                $failedTitles = [];
+                $courses = [];
+    
+                // -----------------------------------------------------
+                // Process up to 15 courses
+                // -----------------------------------------------------
+                for ($i = 0; $i < 15; $i++) {
+    
+                    $scoreField = 'score' . ($i + 1);
+                    $unitField = 'unit' . ($i + 1);
+                    $titleField = 'ctitle' . ($i + 1);
+                    $subjectField = 'subject' . ($i + 1);
+    
+                    $examScore = $result->$scoreField ?? 0;
+                    $courseUnit = (int) ($result->$unitField ?? 0);
+                    $courseTitle = trim($result->$titleField ?? '');
+                    $subjectTitle = trim($result->$subjectField ?? '');
+    
+                    if (empty($courseTitle)) {
+                        continue;
+                    }
+    
+                    // Add actual course unit
+                    $totalCourseUnits += $courseUnit;
+    
+                    $gradeUnit = 0;
+                    $letter = 'F';
+    
+                    foreach ($grades as $grade) {
+    
+                        if (
+                            $examScore >= $grade['min'] &&
+                            $examScore <= $grade['max']
+                        ) {
+                            $gradeUnit = $grade['unit'];
+                            $letter = $grade['letter_grade'];
+                            break;
+                        }
+                    }
+    
+                    $courseGradePoint = $courseUnit * $gradeUnit;
+    
+                    if ($examScore >= 50) {
+    
+                        $totalPassedCourses++;
+                        $gpaPoints += $courseGradePoint;
+    
+                    } else {
+    
+                        if ($examScore > 0) {
+                            $failedTitles[] = $courseTitle;
+                            $totalFailedCourses++;
+                        }
+                    }
+    
+                    $courses[] = [
+                        'subjectTitle' => $subjectTitle,
+                        'courseTitle' => $courseTitle,
+                        'courseUnit' => $courseUnit,
+                        'examScore' => $examScore,
+                        'grade' => $letter,
+                        'gradePoint' => $courseGradePoint,
+                    ];
+                }
+    
+                // -----------------------------------------------------
+                // Second semester GPA
+                // -----------------------------------------------------
+                $gpa = $totalCourseUnits > 0
+                    ? ($gpaPoints / $totalCourseUnits)
+                    : 0;
+    
+                $gpa = round($gpa, 2);
+    
+                // -----------------------------------------------------
+                // Combined first + second semester
+                // -----------------------------------------------------
+                $totalFailedCoursesCombined =
+                    $totalFailedCourses +
+                    $firstData['totalFailedCourses'];
+    
+                $totalCourseUnitsCombined =
+                    $totalCourseUnits +
+                    $firstData['totalCourseUnits'];
+    
+                $totalGradePointsCombined =
+                    $gpaPoints +
+                    $firstData['totalGradePoints'];
+    
+                // -----------------------------------------------------
+                // Weighted CGPA
+                // -----------------------------------------------------
+                $combinedGPA = $totalCourseUnitsCombined > 0
+                    ? round(
+                        $totalGradePointsCombined / $totalCourseUnitsCombined,
+                        2
+                    )
+                    : 0;
+    
+                // -----------------------------------------------------
+                // Combined remark
+                // -----------------------------------------------------
+                $combinedRemark = $combinedGPA < 1.5
+                    ? 'Advised to withdraw'
+                    : (
+                        $totalFailedCoursesCombined > 3
+                            ? 'Repeat'
+                            : 'No Remark'
+                    );
+    
+                $studentData[$admissionNo] = [
+                    'stuno' => $admissionNo,
+                    'stusurname' => trim(
+                        $result->surname . ' ' .
+                        $result->first_name . ' ' .
+                        $result->other_name
+                    ),
+                    'surname' => $result->surname,
+                    'firstname' => $result->first_name,
+                    'othername' => $result->other_name,
+                    'class' => $result->class,
+                    'noofcoursekeep' => $result->no_of_course,
+                    'studpicture' => $result->picture_dir,
+                    'coursekeep' => $result->course,
+                    'courses' => $courses,
+    
+                    'totalPassed' => $totalPassedCourses,
+                    'totalFailed' => $totalFailedCourses,
+                    'totalUnits' => $totalCourseUnits,
+                    'totalGradePoints' => $gpaPoints,
+                    'failedRemarks' => $failedTitles,
+    
+                    'totalGPA' => $gpa,
+    
+                    'firstGPA' => $firstData['gpa'],
+    
+                    'combinedGPA' => $combinedGPA,
+                    'combinedFailed' => $totalFailedCoursesCombined,
+                    'combinedUnits' => $totalCourseUnitsCombined,
+                    'combinedGradePoints' => $totalGradePointsCombined,
+                    'combinedRemark' => $combinedRemark,
+    
+                    'remarks' => $totalFailedCourses > 0
+                        ? 'HAS CARRYOVER'
+                        : 'PASSED ALL',
+                ];
+            }
+    
+            // =========================================================
+            // SAVE RESULTS
+            // =========================================================
+            
+                $serialNumber = 1;
+
+                foreach ($studentData as $index => $data) {
+    
+                $existingRecord = ResultCompute::where('admission_no', $data['stuno'])
+                    ->where('semester', $semester)
+                    ->where('session1', $acadSession)
+                    ->where('class', $level)
+                    ->where('course', $programme)
+                    ->exists();
+    
+                if ($existingRecord) {
+                    continue;
+                }
+    
+                $compute = new ResultCompute();
+    
+                $compute->admission_no = $data['stuno'];
+                $compute->surname = $data['surname'] ?? '';
+                $compute->first_name = $data['firstname'] ?? '';
+                $compute->other_name = $data['othername'] ?? '';
+    
+                $compute->student_full_name = trim(
+                    ($data['surname'] ?? '') . ' ' .
+                    ($data['firstname'] ?? '') . ' ' .
+                    ($data['othername'] ?? '')
+                );
+    
+                $compute->class = $data['class'] ?? '';
+                $compute->semester = $semester;
+                $compute->session1 = $acadSession;
+                $compute->course = $data['coursekeep'] ?? '';
+                $compute->no_of_course = $data['noofcoursekeep'] ?? 0;
+                $compute->picture_dir = $data['studpicture'] ?? '';
+    
+                // Second semester
+                $compute->total_course_unit = $data['totalUnits'];
+                $compute->total_grade_point = $data['totalGradePoints'];
+                $compute->total_failed_course = $data['totalFailed'];
+    
+                // First and second semester GPA
+                $compute->gpa1 = $data['firstGPA'];
+                $compute->gpa = $data['totalGPA'];
+                $compute->gpa2 = $data['totalGPA'];
+    
+                // Cumulative
+                $compute->cgpa = $data['combinedGPA'];
+    
+                $compute->all_total_failed_course = $data['combinedFailed'];
+                $compute->all_total_course_unit = $data['combinedUnits'];
+                $compute->all_total_grade_point = $data['combinedGradePoints'];
+    
+                $compute->failed_course = !empty($data['failedRemarks'])
+                    ? implode(', ', $data['failedRemarks'])
+                    : '';
+    
+                $compute->remark = $data['remarks'];
+                $compute->total_remark = $data['combinedRemark'];
+    
+                // -----------------------------------------------------
+                // Save courses
+                // -----------------------------------------------------
+                foreach ($data['courses'] as $i => $course) {
+    
+                    $col = $i + 1;
+    
+                    if ($col > 19) {
+                        break;
+                    }
+    
+                    $compute["subject{$col}"] =
+                        $course['subjectTitle'] ?? '';
+    
+                    $compute["score{$col}"] =
+                        $course['examScore'] ?? 0;
+    
+                    $compute["unit{$col}"] =
+                        $course['courseUnit'] ?? 0;
+    
+                    $compute["subjectgrade{$col}"] =
+                        $course['grade'] ?? 'F';
+    
+                    $compute["ctitle{$col}"] =
+                        $course['courseTitle'] ?? '';
+    
+                    $compute["ctotal{$col}"] =
+                        $course['gradePoint'] ?? 0;
+                }
+    
+                // -----------------------------------------------------
+                // Save carryovers
+                // -----------------------------------------------------
+                if (!empty($data['failedRemarks'])) {
+    
+                    foreach ($data['failedRemarks'] as $i => $fail) {
+    
+                        if ($i < 15) {
+                            $compute["carryover" . ($i + 1)] = $fail;
+                        }
+                    }
+                }
+    
+                $compute->sn = $serialNumber++;
+    
+                $compute->save();
+            }
+    
+            // ---------------------------------------------------------
+            // Log activity
+            // ---------------------------------------------------------
+            if (auth()->check()) {
+    
+                \App\Models\LogActivity::create([
+                    'user_id' => auth()->id(),
+                    'ip_address' => request()->ip(),
+                    'activity' => "Student results for {$acadSession} {$programme} {$level} {$semester} computed by " .
+                        auth()->user()->last_name . ' ' .
+                        auth()->user()->first_name,
+                    'activity_date' => now(),
+                ]);
+            }
+    
+            return redirect()
+                ->route('result-compute')
+                ->with('success', 'Result Computed Successfully.');
+    
+        } catch (\Throwable $e) {
+    
+            Log::error('Second semester 200-level result computation failed.', [
+                'session' => $acadSession,
+                'programme' => $programme,
+                'level' => $level,
+                'semester' => $semester,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+    
+            return redirect()
+                ->back()
+                ->with('error', 'An error occurred while computing the result. Please check the log and try again.');
+        }
+    }
+
+    public function firstSemester300($acadSession, $programme, $level, $semester, Request $request)
+    {
+        $collegeInfo = AdministratorControl::first();
+
+        // Check if result already computed
+        $resultComputeExists = ResultCompute::where('semester', $semester)
+            ->where('class', $level)
+            ->where('session1', $acadSession)
+            ->where('course', $programme)
+            ->exists();
+
+        if ($resultComputeExists) {
+            return redirect()->back()->with('error', 'The result has been computed already. You can either preview, or delete and recompute.');
+        }
+
+        //----Get total course unit--------
+        $courseUnitTotal = Course::where('course', $programme)
+        ->where('semester', $semester)
+        ->where('level', $level)
+        ->sum('course_unit');
+
+        // Retrieve student results
+        $results = Result::where('semester', $semester)
+            ->where('class', $level)
+            ->where('session1', $acadSession)
+            ->where('course', $programme)
+            ->get();
+
+        $totalStudent  = $results->count();
+        
+
+        if ($results->isEmpty()) {
+            return redirect()->back()->with('error', 'The result is unavailable at the moment, please enter the results.');
+        }
+
+        $grading = GradingSystem::first();
+
+        // Define grading structure
+        $grades = [
+            ['min' => $grading->grade01, 'max' => $grading->grade02, 'unit' => $grading->unit01, 'letter_grade' => $grading->lgrade1],
+            ['min' => $grading->grade11, 'max' => $grading->grade12, 'unit' => $grading->unit02, 'letter_grade' => $grading->lgrade2],
+            ['min' => $grading->grade21, 'max' => $grading->grade22, 'unit' => $grading->unit03, 'letter_grade' => $grading->lgrade3],
+            ['min' => $grading->grade31, 'max' => $grading->grade32, 'unit' => $grading->unit04, 'letter_grade' => $grading->lgrade4],
+            ['min' => $grading->grade41, 'max' => $grading->grade42, 'unit' => $grading->unit05, 'letter_grade' => $grading->lgrade5],
+            ['min' => $grading->grade51, 'max' => $grading->grade52, 'unit' => $grading->unit06, 'letter_grade' => $grading->lgrade6],
+        ];
+
+        // Initialize studentData
+        $studentData = [];
+
+        foreach ($results as $index => $result) {
+            $totalPassedCourses = 0;
+            $totalFailedCourses = 0;
+            $totalCourseUnits = 0;
+            $gpaPoints = 0;
+            $failedTitles = [];
+
+            // Build student info
+            $studentData[$index] = [
+                'stuno' => $result->admission_no,
+                'stusurname' => $result->surname . ' ' . $result->firstname . ' ' . $result->othername,
+                'surname' => $result->surname,
+                'firstname' => $result->first_name,
+                'othername' => $result->other_name,
+                'class' => $result->class,
+                'noofcoursekeep' => $result->no_of_course,
+                'studpicture' => $result->picture_dir,
+                'coursekeep' => $result->course,
+                'courses' => [],
+            ];
+
+            // Loop through up to 15 courses
+            for ($i = 0; $i < 15; $i++) {
+                $scoreField = 'score' . ($i + 1);
+                $unitField = 'unit' . ($i + 1);
+                $titleField = 'ctitle' . ($i + 1);
+                $subjectField = 'subject'. ($i + 1);
+
+                $examScore = $result->$scoreField ?? 0;
+                $courseUnit = (int) $result->$unitField ?? 0;
+                $courseTitle = trim($result->$titleField ?? '');
+                $subjectTitle = trim($result->$subjectField ?? '');
+
+                // Save raw scores and titles
+                $studentData[$index]['courses'][$i] = [
+                    'subjectTitle' => $subjectTitle,
+                    'courseTitle' => $courseTitle,
+                    'courseUnit' => $courseUnit,
+                    'examScore' => $examScore,
+                    'grade' => 'F',  // Default grade if score is less than 50
+                ];
+
+                if (empty($courseTitle)) {
+                    continue;
+                }
+
+                // $totalCourseUnits += $courseUnit;
+                $totalCourseUnits = $courseUnitTotal;
+
+                // Grade computation
+                $gradeUnit = 0;
+                $letter = 'F';
+                foreach ($grades as $grade) {
+                    if ($examScore >= $grade['min'] && $examScore <= $grade['max']) {
+                        $gradeUnit = $grade['unit'];
+                        $letter = $grade['letter_grade'];
+                        break;
+                    }
+                }
+
+                if ($examScore >= 50) {
+                    $totalPassedCourses++;
+                    $gpaPoints += $courseUnit * $gradeUnit;
+                } else {
+                    if ($examScore > 0) {
+                        $failedTitles[] = $courseTitle;
+                        $totalFailedCourses++;
+                    }
+                }
+
+                // Assign grade to the course
+                $studentData[$index]['courses'][$i]['grade'] = $letter;
+            }
+
+            $studentData[$index]['totalPassed'] = $totalPassedCourses;
+            $studentData[$index]['totalFailed'] = $totalFailedCourses;
+            $studentData[$index]['totalUnits'] = $totalCourseUnits;
+            $studentData[$index]['failedRemarks'] = $failedTitles;
+            $studentData[$index]['totalGradePoints'] = $gpaPoints;
+
+            // GPA & Letter Grade
+            if ($totalCourseUnits > 0) {
+                $gpa = $gpaPoints / $totalCourseUnits;
+                $studentData[$index]['totalGPA'] = round($gpa, 2);
+
+                if ($gpa >= $grading->grade51) {
+                    $letterGrade = $grading->lgrade6;
+                } elseif ($gpa >= $grading->grade41) {
+                    $letterGrade = $grading->lgrade5;
+                } elseif ($gpa >= $grading->grade31) {
+                    $letterGrade = $grading->lgrade4;
+                } elseif ($gpa >= $grading->grade21) {
+                    $letterGrade = $grading->lgrade3;
+                } elseif ($gpa >= $grading->grade11) {
+                    $letterGrade = $grading->lgrade2;
+                } else {
+                    $letterGrade = $grading->lgrade1;
+                }
+
+                $studentData[$index]['letterGrade'] = $letterGrade;
+            }
+
+            $studentData[$index]['remarks'] = $totalFailedCourses > 0 ? 'HAS CARRYOVER' : 'PASSED ALL';
+        }
+
+        // Paginate and get current student data
+        $page = $request->query('page', 1);  // Get the current page or default to page 1
+        $resultsPerPage = 1;  // This can be adjusted depending on how many results you want per page
+
+        $paginatedResults = Result::where('semester', $semester)
+            ->where('class', $level)
+            ->where('session1', $acadSession)
+            ->where('course', $programme)
+            ->paginate($resultsPerPage);
+
+        $total = $paginatedResults->total(); // Get the total number of records
+        //---save results to db-----
+        foreach ($studentData as $index => $data) {
+            $compute = new \App\Models\ResultCompute();
+        
+            $compute->admission_no = $data['stuno'] ?? '';
+            $compute->surname = $data['surname'] ?? '';
+            $compute->first_name = $data['firstname'] ?? '';
+            $compute->other_name = $data['othername'] ?? '';
+            $compute->student_full_name = $data['surname'] . ' ' . $data['firstname'] . ' ' . $data['othername'];
+            $compute->class = $data['class'] ?? '';
+            $compute->semester = $semester;
+            $compute->session1 = $acadSession;
+            $compute->course = $data['coursekeep'] ?? '';
+            $compute->no_of_course = $data['noofcoursekeep'] ?? 0;
+            $compute->picture_dir = $data['studpicture'] ?? '';
+            $compute->gpa = $data['totalGPA'] ?? 0;
+            $compute->total_grade_point = $data['totalGradePoints'] ?? 0;
+            $compute->total_course_unit = $data['totalUnits'] ?? 0;
+            $compute->total_failed_course = $data['totalFailed'] ?? 0;
+            $compute->failed_course = !empty($data['failedRemarks']) ? implode(', ', $data['failedRemarks']) : '';
+            $compute->remark = $data['remarks'] ?? 'PASSED ALL';
+        
+            if (!empty($data['courses'])) {
+                foreach ($data['courses'] as $i => $course) {
+                    $col = $i + 1;
+                    if ($col > 19) break;
+        
+                    $unit = $course['courseUnit'] ?? 0;
+                    $score = $course['examScore'] ?? 0;
+                    $gradePoint = 0;
+                    $letterGrade = 'F';
+        
+                    // Determine grade and point based on grading scheme
+                    foreach ($grades as $grade) {
+                        if ($score >= $grade['min'] && $score <= $grade['max']) {
+                            $gradePoint = $grade['unit'];
+                            $letterGrade = $grade['letter_grade'];
+                            break;
+                        }
+                    }
+        
+                    $compute["subject{$col}"] = $course['subjectTitle'] ?? '';
+                    $compute["score{$col}"] = $score;
+                    $compute["unit{$col}"] = $unit;
+                    $compute["subjectgrade{$col}"] = $letterGrade ?? '';
+                    $compute["ctitle{$col}"] = $course['courseTitle'] ?? '';
+                    $compute["ctotal{$col}"] = $unit * $gradePoint;
+                }
+            }
+        
+            if (!empty($data['failedRemarks'])) {
+                foreach ($data['failedRemarks'] as $i => $fail) {
+                    if ($i < 15) {
+                        $compute["carryover" . ($i + 1)] = $fail;
+                    }
+                }
+            }
+            $compute->sn = $index + 1;
+            $compute->save();  
+
+        }
+        //---Log Activity------
+                if (auth()->check()) {
+                    \App\Models\LogActivity::create([
+                        'user_id' => auth()->id(),
+                        'ip_address' => request()->ip(),
+                        'activity' => "Student results for {$acadSession} {$programme} {$level} {$semester} computed by " . auth()->user()->last_name . ' ' . auth()->user()->first_name,
+                        'activity_date' => now(),
+                    ]);
+                }
+        return redirect()->route('result-compute')->with('success' , 'Result Computed Successfuly.');
+        
+    }
+
+        public function secondSemester300($acadSession, $programme, $level, $semester, Request $request)
+    {
+        try {
+    
+            Log::info('Starting second semester 300-level result computation...', [
+                'session' => $acadSession,
+                'programme' => $programme,
+                'level' => $level,
+                'semester' => $semester,
+            ]);
+    
+            $collegeInfo = AdministratorControl::first();
+    
+            // ---------------------------------------------------------
+            // Get course duration
+            // ---------------------------------------------------------
+            $courseStudy = CourseStudy::where('dept_name', $programme)->first();
+            $courseDuration = $courseStudy->dept_duration ?? 0;
+    
+            // ---------------------------------------------------------
+            // Check if already computed
+            // ---------------------------------------------------------
+            $resultComputeExists = ResultCompute::where('semester', $semester)
+                ->where('class', $level)
+                ->where('session1', $acadSession)
+                ->where('course', $programme)
+                ->exists();
+    
+            if ($resultComputeExists) {
+                return redirect()->back()->with(
+                    'error',
+                    'The result has been computed already. You can either preview, or delete and recompute.'
+                );
+            }
+    
+            // ---------------------------------------------------------
+            // First semester results
+            // ---------------------------------------------------------
+            $stdGpaFirst = ResultCompute::where('semester', 'First')
+                ->where('class', $level)
+                ->where('session1', $acadSession)
+                ->where('course', $programme)
+                ->get();
+    
+            if ($stdGpaFirst->isEmpty()) {
+                return redirect()->back()->with(
+                    'error',
+                    'First semester results not available.'
+                );
+            }
+    
+            // ---------------------------------------------------------
+            // Index first semester by admission number
+            // ---------------------------------------------------------
+            $firstSemesterData = [];
+    
+            foreach ($stdGpaFirst as $first) {
+    
+                $admissionNo = trim((string) $first->admission_no);
+    
+                if ($admissionNo === '') {
+                    continue;
+                }
+    
+                $firstSemesterData[$admissionNo] = [
+                    'gpa' => (float) ($first->gpa ?? 0),
+                    'totalFailedCourses' => (int) ($first->total_failed_course ?? 0),
+                    'totalCourseUnits' => (float) ($first->total_course_unit ?? 0),
+                    'totalGradePoints' => (float) ($first->total_grade_point ?? 0),
+                ];
+            }
+    
+            // ---------------------------------------------------------
+            // Second semester results
+            // ---------------------------------------------------------
+            $results = Result::where('semester', $semester)
+                ->where('class', $level)
+                ->where('session1', $acadSession)
+                ->where('course', $programme)
+                ->get();
+    
+            if ($results->isEmpty()) {
+                return redirect()->back()->with(
+                    'error',
+                    'No results found.'
+                );
+            }
+    
+            $grading = GradingSystem::first();
+    
+            if (!$grading) {
+                return redirect()->back()->with(
+                    'error',
+                    'The grading system has not been configured.'
+                );
+            }
+    
+            // ---------------------------------------------------------
+            // Grading structure
+            // ---------------------------------------------------------
+            $grades = [
+                [
+                    'min' => $grading->grade01,
+                    'max' => $grading->grade02,
+                    'unit' => $grading->unit01,
+                    'letter_grade' => $grading->lgrade1
+                ],
+                [
+                    'min' => $grading->grade11,
+                    'max' => $grading->grade12,
+                    'unit' => $grading->unit02,
+                    'letter_grade' => $grading->lgrade2
+                ],
+                [
+                    'min' => $grading->grade21,
+                    'max' => $grading->grade22,
+                    'unit' => $grading->unit03,
+                    'letter_grade' => $grading->lgrade3
+                ],
+                [
+                    'min' => $grading->grade31,
+                    'max' => $grading->grade32,
+                    'unit' => $grading->unit04,
+                    'letter_grade' => $grading->lgrade4
+                ],
+                [
+                    'min' => $grading->grade41,
+                    'max' => $grading->grade42,
+                    'unit' => $grading->unit05,
+                    'letter_grade' => $grading->lgrade5
+                ],
+                [
+                    'min' => $grading->grade51,
+                    'max' => $grading->grade52,
+                    'unit' => $grading->unit06,
+                    'letter_grade' => $grading->lgrade6
+                ],
+            ];
+    
+            $studentData = [];
+    
+            // =========================================================
+            // CALCULATE SECOND SEMESTER
+            // =========================================================
+            foreach ($results as $result) {
+    
+                $admissionNo = trim((string) $result->admission_no);
+    
+                // -----------------------------------------------------
+                // Make sure first semester exists
+                // -----------------------------------------------------
+                if (!isset($firstSemesterData[$admissionNo])) {
+    
+                    Log::warning('First semester result not found for student.', [
+                        'admission_no' => $admissionNo,
+                        'session' => $acadSession,
+                        'programme' => $programme,
+                        'level' => $level,
+                    ]);
+    
+                    // Do NOT use zero as a fake first semester result
+                    continue;
+                }
+    
+                $firstData = $firstSemesterData[$admissionNo];
+    
+                $totalUnits = 0;
+                $totalPoints = 0;
+                $totalFailed = 0;
+                $totalPassed = 0;
+    
+                $failedCourses = [];
+                $courses = [];
+    
+                // -----------------------------------------------------
+                // Process courses
+                // -----------------------------------------------------
+                for ($i = 1; $i <= 15; $i++) {
+    
+                    $score = $result->{"score$i"} ?? 0;
+                    $unit = (int) ($result->{"unit$i"} ?? 0);
+                    $title = trim($result->{"ctitle$i"} ?? '');
+                    $subject = trim($result->{"subject$i"} ?? '');
+    
+                    if (empty($title)) {
+                        continue;
+                    }
+    
+                    $gradePoint = 0;
+                    $letter = 'F';
+    
+                    foreach ($grades as $grade) {
+    
+                        if (
+                            $score >= $grade['min'] &&
+                            $score <= $grade['max']
+                        ) {
+                            $gradePoint = $grade['unit'];
+                            $letter = $grade['letter_grade'];
+                            break;
+                        }
+                    }
+    
+                    $coursePoint = $unit * $gradePoint;
+    
+                    $totalUnits += $unit;
+    
+                    if ($score >= 50) {
+    
+                        $totalPassed++;
+                        $totalPoints += $coursePoint;
+    
+                    } else {
+    
+                        if ($score > 0) {
+                            $totalFailed++;
+                            $failedCourses[] = $title;
+                        }
+                    }
+    
+                    $courses[] = [
+                        'subject' => $subject,
+                        'title' => $title,
+                        'unit' => $unit,
+                        'score' => $score,
+                        'grade' => $letter,
+                        'point' => $coursePoint,
+                    ];
+                }
+    
+                // -----------------------------------------------------
+                // Second semester GPA
+                // -----------------------------------------------------
+                $gpa = $totalUnits > 0
+                    ? ($totalPoints / $totalUnits)
+                    : 0;
+    
+                $gpa = round($gpa, 2);
+    
+                // -----------------------------------------------------
+                // Combined totals
+                // -----------------------------------------------------
+                $combinedUnits =
+                    $totalUnits +
+                    $firstData['totalCourseUnits'];
+    
+                $combinedPoints =
+                    $totalPoints +
+                    $firstData['totalGradePoints'];
+    
+                $combinedFailed =
+                    $totalFailed +
+                    $firstData['totalFailedCourses'];
+    
+                // -----------------------------------------------------
+                // Weighted CGPA
+                // -----------------------------------------------------
+                $cgpa = $combinedUnits > 0
+                    ? round($combinedPoints / $combinedUnits, 2)
+                    : 0;
+    
+                // -----------------------------------------------------
+                // Combined remark
+                // -----------------------------------------------------
+                $combinedRemark = $cgpa < 1.5
+                    ? 'Advised to withdraw'
+                    : (
+                        $combinedFailed > 3
+                            ? 'Repeat'
+                            : 'No Remark'
+                    );
+    
+                // -----------------------------------------------------
+                // Store calculated student data
+                // -----------------------------------------------------
+                $studentData[$admissionNo] = [
+    
+                    'info' => $result,
+    
+                    'courses' => $courses,
+    
+                    'gpa' => $gpa,
+    
+                    'cgpa' => $cgpa,
+    
+                    'firstGpa' => $firstData['gpa'],
+    
+                    'totalUnits' => $totalUnits,
+    
+                    'totalPoints' => $totalPoints,
+    
+                    'totalFailed' => $totalFailed,
+    
+                    'failedCourses' => $failedCourses,
+    
+                    'remark' => $totalFailed > 0
+                        ? 'HAS CARRYOVER'
+                        : 'PASSED ALL',
+    
+                    'totalRemark' => $combinedRemark,
+    
+                    'combinedUnits' => $combinedUnits,
+    
+                    'combinedPoints' => $combinedPoints,
+    
+                    'combinedFailed' => $combinedFailed,
+                ];
+            }
+    
+            // =========================================================
+            // SAVE RESULTS
+            // =========================================================
+            $serialNumber = 1;
+            foreach ($studentData as $sn => $data) {
+    
+                $result = $data['info'];
+    
+                // -----------------------------------------------------
+                // Check duplicate
+                // -----------------------------------------------------
+                $existingRecord = ResultCompute::where(
+                        'admission_no',
+                        $sn
+                    )
+                    ->where('semester', $semester)
+                    ->where('session1', $acadSession)
+                    ->where('class', $level)
+                    ->where('course', $programme)
+                    ->exists();
+    
+                if ($existingRecord) {
+                    continue;
+                }
+    
+                $compute = new ResultCompute();
+    
+                // -----------------------------------------------------
+                // Student information
+                // -----------------------------------------------------
+                $compute->admission_no = $sn;
+    
+                $compute->surname = $result->surname ?? '';
+    
+                $compute->first_name = $result->first_name ?? '';
+    
+                $compute->other_name = $result->other_name ?? '';
+    
+                $compute->student_full_name = trim(
+                    ($result->surname ?? '') . ' ' .
+                    ($result->first_name ?? '') . ' ' .
+                    ($result->other_name ?? '')
+                );
+    
+                $compute->class = $result->class ?? '';
+    
+                $compute->semester = $semester;
+    
+                $compute->session1 = $acadSession;
+    
+                $compute->course = $programme;
+    
+                $compute->no_of_course = $result->no_of_course ?? 0;
+    
+                // -----------------------------------------------------
+                // Second semester totals
+                // -----------------------------------------------------
+                $compute->total_course_unit =
+                    $data['totalUnits'];
+    
+                $compute->total_grade_point =
+                    $data['totalPoints'];
+    
+                $compute->total_failed_course =
+                    $data['totalFailed'];
+    
+                // -----------------------------------------------------
+                // GPA
+                // -----------------------------------------------------
+                $compute->gpa1 =
+                    $data['firstGpa'];
+    
+                $compute->gpa =
+                    $data['gpa'];
+    
+                $compute->gpa2 =
+                    $data['gpa'];
+    
+                // -----------------------------------------------------
+                // CGPA
+                // -----------------------------------------------------
+                $compute->cgpa =
+                    $data['cgpa'];
+    
+                // -----------------------------------------------------
+                // Combined totals
+                // -----------------------------------------------------
+                $compute->all_total_failed_course =
+                    $data['combinedFailed'];
+    
+                $compute->all_total_course_unit =
+                    $data['combinedUnits'];
+    
+                $compute->all_total_grade_point =
+                    $data['combinedPoints'];
+    
+                // -----------------------------------------------------
+                // Remarks
+                // -----------------------------------------------------
+                $compute->failed_course =
+                    !empty($data['failedCourses'])
+                        ? implode(', ', $data['failedCourses'])
+                        : '';
+    
+                $compute->remark =
+                    $data['remark'];
+    
+                $compute->total_remark =
+                    $data['totalRemark'];
+    
+                // -----------------------------------------------------
+                // Save course details
+                // -----------------------------------------------------
+                foreach ($data['courses'] as $i => $course) {
+    
+                    $col = $i + 1;
+    
+                    if ($col > 19) {
+                        break;
+                    }
+    
+                    $compute["subject{$col}"] =
+                        $course['subject'] ?? '';
+    
+                    $compute["score{$col}"] =
+                        $course['score'] ?? 0;
+    
+                    $compute["unit{$col}"] =
+                        $course['unit'] ?? 0;
+    
+                    $compute["subjectgrade{$col}"] =
+                        $course['grade'] ?? 'F';
+    
+                    $compute["ctitle{$col}"] =
+                        $course['title'] ?? '';
+    
+                    $compute["ctotal{$col}"] =
+                        $course['point'] ?? 0;
+                }
+    
+                // -----------------------------------------------------
+                // Save carryovers
+                // -----------------------------------------------------
+                if (!empty($data['failedCourses'])) {
+    
+                    foreach ($data['failedCourses'] as $i => $failedCourse) {
+    
+                        if ($i < 15) {
+                            $compute["carryover" . ($i + 1)] =
+                                $failedCourse;
+                        }
+                    }
+                }
+        
+                $compute->sn = $serialNumber++;
+                
+                $compute->save();
+            }
+    
+            // ---------------------------------------------------------
+            // Final CGPA process
+            // ---------------------------------------------------------
+            $this->calculateFinalCgpa(
+                $acadSession,
+                $programme,
+                $level,
+                $semester,
+                $courseDuration
+            );
+    
+            // ---------------------------------------------------------
+            // Log activity
+            // ---------------------------------------------------------
+            if (auth()->check()) {
+    
+                \App\Models\LogActivity::create([
+                    'user_id' => auth()->id(),
+                    'ip_address' => request()->ip(),
+                    'activity' => "Student results for {$acadSession} {$programme} {$level} {$semester} computed by " .
+                        auth()->user()->last_name . ' ' .
+                        auth()->user()->first_name,
+                    'activity_date' => now(),
+                ]);
+            }
+    
+            return redirect()
+                ->route('result-compute')
+                ->with('success', 'Results Computed Successfully.');
+    
+        } catch (\Throwable $e) {
+    
+            Log::error('Second semester 300-level result computation failed.', [
+                'session' => $acadSession,
+                'programme' => $programme,
+                'level' => $level,
+                'semester' => $semester,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+    
+            return redirect()
+                ->back()
+                ->with(
+                    'error',
+                    'An error occurred while computing the result. Please check the log and try again.'
+                );
+        }
+    }
+    
+    
+        public function secondSemester300Two($acadSession, $programme, $level, $semester, Request $request)
+    {
+        try {
+    
+            Log::info('Starting second semester 300Two result computation...', [
+                'session' => $acadSession,
+                'programme' => $programme,
+                'level' => $level,
+                'semester' => $semester,
+            ]);
+    
+            $collegeInfo = AdministratorControl::first();
+    
+            // ---------------------------------------------------------
+            // Get course duration
+            // ---------------------------------------------------------
+            $courseStudy = CourseStudy::where('dept_name', $programme)->first();
+            $courseDuration = $courseStudy->dept_duration ?? 0;
+    
+            // ---------------------------------------------------------
+            // Check if result has already been computed
+            // ---------------------------------------------------------
+            $resultComputeExists = ResultCompute::where('semester', $semester)
+                ->where('class', $level)
+                ->where('session1', $acadSession)
+                ->where('course', $programme)
+                ->exists();
+    
+            if ($resultComputeExists) {
+                return redirect()->back()->with(
+                    'error',
+                    'The result has been computed already.'
+                );
+            }
+    
+            // ---------------------------------------------------------
+            // Get first semester results
+            // ---------------------------------------------------------
+            $stdGpaFirst = ResultCompute::where('semester', 'First')
+                ->where('class', $level)
+                ->where('session1', $acadSession)
+                ->where('course', $programme)
+                ->get();
+    
+            if ($stdGpaFirst->isEmpty()) {
+                return redirect()->back()->with(
+                    'error',
+                    'First semester results not available.'
+                );
+            }
+    
+            // ---------------------------------------------------------
+            // Map first semester by admission number
+            // ---------------------------------------------------------
+            $firstSemesterData = [];
+    
+            foreach ($stdGpaFirst as $first) {
+    
+                $admissionNo = trim((string) $first->admission_no);
+    
+                if ($admissionNo === '') {
+                    continue;
+                }
+    
+                $firstSemesterData[$admissionNo] = [
+                    'gpa' => (float) ($first->gpa ?? 0),
+                    'totalFailedCourses' => (int) ($first->total_failed_course ?? 0),
+                    'totalCourseUnits' => (float) ($first->total_course_unit ?? 0),
+                    'totalGradePoints' => (float) ($first->total_grade_point ?? 0),
+                ];
+            }
+    
+            // ---------------------------------------------------------
+            // Get second semester results
+            // ---------------------------------------------------------
+            $results = Result::where('semester', $semester)
+                ->where('class', $level)
+                ->where('session1', $acadSession)
+                ->where('course', $programme)
+                ->get();
+    
+            if ($results->isEmpty()) {
+                return redirect()->back()->with(
+                    'error',
+                    'No results found.'
+                );
+            }
+    
+            // ---------------------------------------------------------
+            // Get grading system
+            // ---------------------------------------------------------
+            $grading = GradingSystem::first();
+    
+            if (!$grading) {
+                return redirect()->back()->with(
+                    'error',
+                    'The grading system has not been configured.'
+                );
+            }
+    
+            // ---------------------------------------------------------
+            // Grading structure
+            // ---------------------------------------------------------
+            $grades = [
+                [
+                    'min' => $grading->grade01,
+                    'max' => $grading->grade02,
+                    'unit' => $grading->unit01,
+                    'letter' => $grading->lgrade1
+                ],
+                [
+                    'min' => $grading->grade11,
+                    'max' => $grading->grade12,
+                    'unit' => $grading->unit02,
+                    'letter' => $grading->lgrade2
+                ],
+                [
+                    'min' => $grading->grade21,
+                    'max' => $grading->grade22,
+                    'unit' => $grading->unit03,
+                    'letter' => $grading->lgrade3
+                ],
+                [
+                    'min' => $grading->grade31,
+                    'max' => $grading->grade32,
+                    'unit' => $grading->unit04,
+                    'letter' => $grading->lgrade4
+                ],
+                [
+                    'min' => $grading->grade41,
+                    'max' => $grading->grade42,
+                    'unit' => $grading->unit05,
+                    'letter' => $grading->lgrade5
+                ],
+                [
+                    'min' => $grading->grade51,
+                    'max' => $grading->grade52,
+                    'unit' => $grading->unit06,
+                    'letter' => $grading->lgrade6
+                ],
+            ];
+    
+            $studentData = [];
+    
+            // =========================================================
+            // CALCULATE SECOND SEMESTER
+            // =========================================================
+            foreach ($results as $result) {
+    
+                // Always normalize admission number
+                $adm = trim((string) $result->admission_no);
+    
+                // -----------------------------------------------------
+                // Make sure first semester exists for this student
+                // -----------------------------------------------------
+                if (!isset($firstSemesterData[$adm])) {
+    
+                    Log::warning(
+                        'First semester result not found for student in secondSemester300Two.',
+                        [
+                            'admission_no' => $adm,
+                            'session' => $acadSession,
+                            'programme' => $programme,
+                            'level' => $level,
+                        ]
+                    );
+    
+                    // Do not silently use GPA = 0
+                    continue;
+                }
+    
+                // Use the matched first semester record
+                $first = $firstSemesterData[$adm];
+    
+                $totalUnits = 0;
+                $totalPoints = 0;
+                $totalFailed = 0;
+                $totalPassed = 0;
+    
+                $failedCourses = [];
+                $courses = [];
+    
+                // -----------------------------------------------------
+                // Process courses
+                // -----------------------------------------------------
+                for ($i = 1; $i <= 15; $i++) {
+    
+                    $score = $result->{"score$i"} ?? 0;
+                    $unit = (int) ($result->{"unit$i"} ?? 0);
+                    $title = trim($result->{"ctitle$i"} ?? '');
+                    $subject = trim($result->{"subject$i"} ?? '');
+    
+                    if (empty($title)) {
+                        continue;
+                    }
+    
+                    $gradePoint = 0;
+                    $letter = 'F';
+    
+                    foreach ($grades as $g) {
+    
+                        if (
+                            $score >= $g['min'] &&
+                            $score <= $g['max']
+                        ) {
+                            $gradePoint = $g['unit'];
+                            $letter = $g['letter'];
+                            break;
+                        }
+                    }
+    
+                    $coursePoint = $unit * $gradePoint;
+    
+                    $totalUnits += $unit;
+    
+                    if ($score >= 50) {
+    
+                        $totalPassed++;
+                        $totalPoints += $coursePoint;
+    
+                    } else {
+    
+                        if ($score > 0) {
+    
+                            $totalFailed++;
+                            $failedCourses[] = $title;
+                        }
+                    }
+    
+                    $courses[] = [
+                        'subject' => $subject,
+                        'title' => $title,
+                        'unit' => $unit,
+                        'score' => $score,
+                        'grade' => $letter,
+                        'point' => $coursePoint,
+                    ];
+                }
+    
+                // -----------------------------------------------------
+                // Second semester GPA
+                // -----------------------------------------------------
+                $gpa = $totalUnits > 0
+                    ? ($totalPoints / $totalUnits)
+                    : 0;
+    
+                $gpa = round($gpa, 2);
+    
+                // -----------------------------------------------------
+                // Combine first and second semester
+                // -----------------------------------------------------
+                $combinedUnits =
+                    $totalUnits +
+                    $first['totalCourseUnits'];
+    
+                $combinedPoints =
+                    $totalPoints +
+                    $first['totalGradePoints'];
+    
+                $combinedFailed =
+                    $totalFailed +
+                    $first['totalFailedCourses'];
+    
+                // -----------------------------------------------------
+                // Weighted CGPA
+                // -----------------------------------------------------
+                $cgpa = $combinedUnits > 0
+                    ? ($combinedPoints / $combinedUnits)
+                    : 0;
+    
+                $cgpa = round($cgpa, 2);
+    
+                // -----------------------------------------------------
+                // Combined remark
+                // -----------------------------------------------------
+                $combinedRemark = $cgpa < 1.5
+                    ? 'Advised to withdraw'
+                    : (
+                        $combinedFailed > 3
+                            ? 'Repeat'
+                            : 'No Remark'
+                    );
+    
+                // -----------------------------------------------------
+                // Store student data
+                // -----------------------------------------------------
+                $studentData[$adm] = [
+                    'info' => $result,
+    
+                    'courses' => $courses,
+    
+                    'gpa' => $gpa,
+    
+                    'cgpa' => $cgpa,
+    
+                    'totalUnits' => $totalUnits,
+    
+                    'totalPoints' => $totalPoints,
+    
+                    'totalFailed' => $totalFailed,
+    
+                    'failedCourses' => $failedCourses,
+    
+                    'remark' => $totalFailed > 0
+                        ? 'HAS CARRYOVER'
+                        : 'PASSED ALL',
+    
+                    'totalRemark' => $combinedRemark,
+    
+                    // First semester GPA
+                    'firstGpa' => $first['gpa'],
+    
+                    // Combined totals
+                    'combinedUnits' => $combinedUnits,
+    
+                    'combinedPoints' => $combinedPoints,
+    
+                    'combinedFailed' => $combinedFailed,
+                ];
+            }
+    
+            // =========================================================
+            // SAVE RESULTS
+            // =========================================================
+            $serialNumber = 1;
+            foreach ($studentData as $adm => $data) {
+    
+                $result = $data['info'];
+    
+                // -----------------------------------------------------
+                // Check duplicate student record
+                // -----------------------------------------------------
+                $existingRecord = ResultCompute::where(
+                        'admission_no',
+                        $adm
+                    )
+                    ->where('semester', $semester)
+                    ->where('session1', $acadSession)
+                    ->where('class', $level)
+                    ->where('course', $programme)
+                    ->exists();
+    
+                if ($existingRecord) {
+                    continue;
+                }
+    
+                $compute = new ResultCompute();
+    
+                // -----------------------------------------------------
+                // Student information
+                // -----------------------------------------------------
+                $compute->admission_no = $adm;
+    
+                $compute->surname = $result->surname ?? '';
+    
+                $compute->first_name = $result->first_name ?? '';
+    
+                $compute->other_name = $result->other_name ?? '';
+    
+                $compute->student_full_name = trim(
+                    ($result->surname ?? '') . ' ' .
+                    ($result->first_name ?? '') . ' ' .
+                    ($result->other_name ?? '')
+                );
+    
+                $compute->class = $result->class ?? '';
+    
+                $compute->semester = $semester;
+    
+                $compute->session1 = $acadSession;
+    
+                $compute->course = $programme;
+    
+                $compute->no_of_course = $result->no_of_course ?? 0;
+    
+                // -----------------------------------------------------
+                // Second semester totals
+                // -----------------------------------------------------
+                $compute->total_course_unit =
+                    $data['totalUnits'];
+    
+                $compute->total_grade_point =
+                    $data['totalPoints'];
+    
+                $compute->total_failed_course =
+                    $data['totalFailed'];
+    
+                // -----------------------------------------------------
+                // GPA
+                // -----------------------------------------------------
+                $compute->gpa1 =
+                    $data['firstGpa'];
+    
+                $compute->gpa =
+                    $data['gpa'];
+    
+                $compute->gpa2 =
+                    $data['gpa'];
+    
+                // -----------------------------------------------------
+                // CGPA
+                // -----------------------------------------------------
+                $compute->cgpa =
+                    $data['cgpa'];
+    
+                // -----------------------------------------------------
+                // Combined totals
+                // -----------------------------------------------------
+                $compute->all_total_failed_course =
+                    $data['combinedFailed'];
+    
+                $compute->all_total_course_unit =
+                    $data['combinedUnits'];
+    
+                $compute->all_total_grade_point =
+                    $data['combinedPoints'];
+    
+                // -----------------------------------------------------
+                // Remarks
+                // -----------------------------------------------------
+                $compute->failed_course =
+                    !empty($data['failedCourses'])
+                        ? implode(', ', $data['failedCourses'])
+                        : '';
+    
+                $compute->remark =
+                    $data['remark'];
+    
+                $compute->total_remark =
+                    $data['totalRemark'];
+    
+                // -----------------------------------------------------
+                // Save courses
+                // -----------------------------------------------------
+                foreach ($data['courses'] as $i => $course) {
+    
+                    $col = $i + 1;
+    
+                    if ($col > 19) {
+                        break;
+                    }
+    
+                    $compute["subject{$col}"] =
+                        $course['subject'] ?? '';
+    
+                    $compute["score{$col}"] =
+                        $course['score'] ?? 0;
+    
+                    $compute["unit{$col}"] =
+                        $course['unit'] ?? 0;
+    
+                    $compute["subjectgrade{$col}"] =
+                        $course['grade'] ?? 'F';
+    
+                    $compute["ctitle{$col}"] =
+                        $course['title'] ?? '';
+    
+                    $compute["ctotal{$col}"] =
+                        $course['point'] ?? 0;
+                }
+    
+                // -----------------------------------------------------
+                // Save carryover courses
+                // -----------------------------------------------------
+                if (!empty($data['failedCourses'])) {
+    
+                    foreach ($data['failedCourses'] as $i => $failedCourse) {
+    
+                        if ($i < 15) {
+                            $compute["carryover" . ($i + 1)] =
+                                $failedCourse;
+                        }
+                    }
+                }
+    
+                // -----------------------------------------------------
+                // Serial number
+                // -----------------------------------------------------
+                $compute->sn = $serialNumber++;
+    
+                $compute->save();
+            }
+    
+            // =========================================================
+            // FINAL CGPA PROCESS
+            // =========================================================
+            $this->calculateFinalCgpa(
+                $acadSession,
+                $programme,
+                $level,
+                $semester,
+                $courseDuration
+            );
+    
+            // =========================================================
+            // LOG ACTIVITY
+            // =========================================================
+            if (auth()->check()) {
+    
+                \App\Models\LogActivity::create([
+                    'user_id' => auth()->id(),
+                    'ip_address' => request()->ip(),
+                    'activity' =>
+                        "Student results for {$acadSession} {$programme} {$level} {$semester} computed by " .
+                        auth()->user()->last_name . ' ' .
+                        auth()->user()->first_name,
+                    'activity_date' => now(),
+                ]);
+            }
+    
+            return redirect()
+                ->route('result-compute')
+                ->with(
+                    'success',
+                    'Results Computed Successfully.'
+                );
+    
+        } catch (\Throwable $e) {
+    
+            Log::error(
+                'Second semester 300Two result computation failed.',
+                [
+                    'session' => $acadSession,
+                    'programme' => $programme,
+                    'level' => $level,
+                    'semester' => $semester,
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]
+            );
+    
+            return redirect()
+                ->back()
+                ->with(
+                    'error',
+                    'An error occurred while computing the result. Please check the log and try again.'
+                );
+        }
+    }
+
+    public function calculateFinalCgpa($acadSession, $programme, $level, $semester, $courseDuration)
+    {
+        // Step 1: Get all the results for the students based on the session, level, and course
+        $results = Result::where('semester', $semester)
+                        ->where('class', $level)
+                        ->where('session1', $acadSession)
+                        ->where('course', $programme)
+                        ->get();
+
+        $totalStudent = $results->count();  // Get the total number of students
+
+        // Step 2: Loop through each student result
+        foreach ($results as $result) {
+            // Step 3: Get the relevant CGPA and grade points based on duration and level
+            if ($courseDuration == 2 and $level == 200) {
+                // Fetch CGPA and grade points for 100 level and 200 level second semesters
+                $firstLevelData = ResultCompute::where('class', 100)
+                                            ->where('semester', 'second')
+                                            ->where('session1', $acadSession)
+                                            ->where('course', $programme)
+                                            ->where('admission_no', $result->admission_no) 
+                                            ->first();
+
+                $secondLevelData = ResultCompute::where('class', 200)
+                                                ->where('semester', 'second')
+                                                ->where('session1', $acadSession)
+                                                ->where('course', $programme)
+                                                ->where('admission_no', $result->admission_no) 
+                                                ->first();
+
+                // Fetch CGPA for the first and second levels
+                $cgpa100 = $firstLevelData ? $firstLevelData->cgpa : 0;
+                $cgpa200 = $secondLevelData ? $secondLevelData->cgpa : 0;
+
+                // Calculate total grade points and total course units for 100 and 200 level second semesters
+                $totalGradePoints100 = $firstLevelData ? $firstLevelData->all_total_grade_point : 0;
+                $totalCourseUnits100 = $firstLevelData ? $firstLevelData->all_total_course_unit : 0;
+
+                $totalGradePoints200 = $secondLevelData ? $secondLevelData->all_total_grade_point : 0;
+                $totalCourseUnits200 = $secondLevelData ? $secondLevelData->all_total_course_unit : 0;
+
+                // Calculate the total CGPA (sum of grade points / sum of course units)
+                $totalGradePoints = $totalGradePoints100 + $totalGradePoints200;
+                $totalCourseUnits = $totalCourseUnits100 + $totalCourseUnits200;
+
+                $totalCgpa = ($totalCourseUnits > 0) ? $totalGradePoints / $totalCourseUnits : 0;
+
+                // Save the CGPAs for the 200 level second semester
+                if ($secondLevelData) {
+                    $secondLevelData->cgpa1 = $cgpa100;
+                    $secondLevelData->cgpa2 = $cgpa200;
+                    $secondLevelData->total_cgpa = $totalCgpa;
+                    $secondLevelData->total_grade_point_new = $totalGradePoints;
+                    $secondLevelData->total_course_unit_new = $totalCourseUnits;
+                    $secondLevelData->save();
+                }                
+        
+            } elseif ($courseDuration == 2 and $level == 'NDII') {
+                // Fetch CGPA and grade points for NDI level and NDII level second semesters
+                $firstLevelData = ResultCompute::where('class', 'NDI')
+                                            ->where('semester', 'second')
+                                            ->where('session1', $acadSession)
+                                            ->where('course', $programme)
+                                            ->where('admission_no', $result->admission_no) 
+                                            ->first();
+
+                $secondLevelData = ResultCompute::where('class', 'NDII')
+                                                ->where('semester', 'second')
+                                                ->where('session1', $acadSession)
+                                                ->where('course', $programme)
+                                                ->where('admission_no', $result->admission_no) 
+                                                ->first();
+
+                // Fetch CGPA for the first and second levels
+                $cgpa100 = $firstLevelData ? $firstLevelData->cgpa : 0;
+                $cgpa200 = $secondLevelData ? $secondLevelData->cgpa : 0;
+
+                // Calculate total grade points and total course units for NDI and NDII level second semesters
+                $totalGradePoints100 = $firstLevelData ? $firstLevelData->all_total_grade_point : 0;
+                $totalCourseUnits100 = $firstLevelData ? $firstLevelData->all_total_course_unit : 0;
+
+                $totalGradePoints200 = $secondLevelData ? $secondLevelData->all_total_grade_point : 0;
+                $totalCourseUnits200 = $secondLevelData ? $secondLevelData->all_total_course_unit : 0;
+
+                // Calculate the total CGPA (sum of grade points / sum of course units)
+                $totalGradePoints = $totalGradePoints100 + $totalGradePoints200;
+                $totalCourseUnits = $totalCourseUnits100 + $totalCourseUnits200;
+
+                $totalCgpa = ($totalCourseUnits > 0) ? $totalGradePoints / $totalCourseUnits : 0;
+
+                // Save the CGPAs for the NDII level second semester
+                if ($secondLevelData) {
+                    $secondLevelData->cgpa1 = $cgpa100;
+                    $secondLevelData->cgpa2 = $cgpa200;
+                    $secondLevelData->total_cgpa = $totalCgpa;
+                    $secondLevelData->total_grade_point_new = $totalGradePoints;
+                    $secondLevelData->total_course_unit_new = $totalCourseUnits;
+                    $secondLevelData->save();
+                }                
+        
+            } elseif ($courseDuration == 2 and $level == 'HNDII') {
+                // Fetch CGPA and grade points for HNDI level and HNDII level second semesters
+                $firstLevelData = ResultCompute::where('class', 'HNDI')
+                                            ->where('semester', 'second')
+                                            ->where('session1', $acadSession)
+                                            ->where('course', $programme)
+                                            ->where('admission_no', $result->admission_no) 
+                                            ->first();
+
+                $secondLevelData = ResultCompute::where('class', 'HNDII')
+                                                ->where('semester', 'second')
+                                                ->where('session1', $acadSession)
+                                                ->where('course', $programme)
+                                                ->where('admission_no', $result->admission_no) 
+                                                ->first();
+
+                // Fetch CGPA for the first and second levels
+                $cgpa100 = $firstLevelData ? $firstLevelData->cgpa : 0;
+                $cgpa200 = $secondLevelData ? $secondLevelData->cgpa : 0;
+
+                // Calculate total grade points and total course units for HNDI and HNDII level second semesters
+                $totalGradePoints100 = $firstLevelData ? $firstLevelData->all_total_grade_point : 0;
+                $totalCourseUnits100 = $firstLevelData ? $firstLevelData->all_total_course_unit : 0;
+
+                $totalGradePoints200 = $secondLevelData ? $secondLevelData->all_total_grade_point : 0;
+                $totalCourseUnits200 = $secondLevelData ? $secondLevelData->all_total_course_unit : 0;
+
+                // Calculate the total CGPA (sum of grade points / sum of course units)
+                $totalGradePoints = $totalGradePoints100 + $totalGradePoints200;
+                $totalCourseUnits = $totalCourseUnits100 + $totalCourseUnits200;
+
+                $totalCgpa = ($totalCourseUnits > 0) ? $totalGradePoints / $totalCourseUnits : 0;
+
+                // Save the CGPAs for the HNDII level second semester
+                if ($secondLevelData) {
+                    $secondLevelData->cgpa1 = $cgpa100;
+                    $secondLevelData->cgpa2 = $cgpa200;
+                    $secondLevelData->total_cgpa = $totalCgpa;
+                    $secondLevelData->total_grade_point_new = $totalGradePoints;
+                    $secondLevelData->total_course_unit_new = $totalCourseUnits;
+                    $secondLevelData->save();
+                }                
+        
+            } elseif ($courseDuration == 3 and $level == 300) {
+                // Fetch CGPA and grade points for 100, 200, and 300 level second semesters
+                $firstLevelData = ResultCompute::where('class', 100)
+                                            ->where('semester', 'second')
+                                            ->where('session1', $acadSession)
+                                            ->where('course', $programme)
+                                            ->where('admission_no', $result->admission_no) 
+                                            ->first();
+
+                $secondLevelData = ResultCompute::where('class', 200)
+                                                ->where('semester', 'second')
+                                                ->where('session1', $acadSession)
+                                                ->where('course', $programme)
+                                                ->where('admission_no', $result->admission_no) 
+                                                ->first();
+
+                $thirdLevelData = ResultCompute::where('class', 300)
+                                            ->where('semester', 'second')
+                                            ->where('session1', $acadSession)
+                                            ->where('course', $programme)
+                                            ->where('admission_no', $result->admission_no) // Assuming student_id exists
+                                            ->first();
+
+                // Fetch CGPAs for all 3 levels
+                $cgpa100 = $firstLevelData ? $firstLevelData->cgpa : 0;
+                $cgpa200 = $secondLevelData ? $secondLevelData->cgpa : 0;
+                $cgpa300 = $thirdLevelData ? $thirdLevelData->cgpa : 0;
+
+                // Calculate total grade points and total course units for 100, 200, and 300 level second semesters
+                $totalGradePoints100 = $firstLevelData ? $firstLevelData->all_total_grade_point : 0;
+                $totalCourseUnits100 = $firstLevelData ? $firstLevelData->all_total_course_unit : 0;
+
+                $totalGradePoints200 = $secondLevelData ? $secondLevelData->all_total_grade_point : 0;
+                $totalCourseUnits200 = $secondLevelData ? $secondLevelData->all_total_course_unit : 0;
+
+                $totalGradePoints300 = $thirdLevelData ? $thirdLevelData->all_total_grade_point : 0;
+                $totalCourseUnits300 = $thirdLevelData ? $thirdLevelData->all_total_course_unit : 0;
+
+                // Calculate the total CGPA (sum of grade points / sum of course units)
+                $totalGradePoints = $totalGradePoints100 + $totalGradePoints200 + $totalGradePoints300;
+                $totalCourseUnits = $totalCourseUnits100 + $totalCourseUnits200 + $totalCourseUnits300;
+
+                $totalCgpa = ($totalCourseUnits > 0) ? $totalGradePoints / $totalCourseUnits : 0;
+
+                // Save the CGPAs for the 300 level second semester
+                if ($thirdLevelData) {
+                    $thirdLevelData->cgpa1 = $cgpa100;
+                    $thirdLevelData->cgpa2 = $cgpa200;
+                    $thirdLevelData->cgpa3 = $cgpa300;
+                    $thirdLevelData->total_cgpa = $totalCgpa;
+                    $thirdLevelData->total_grade_point_new = $totalGradePoints;
+                    $thirdLevelData->total_course_unit_new = $totalCourseUnits;
+                    $thirdLevelData->save();
+                }
+            }elseif ($courseDuration == 2 and $level == 300) {
+                // Fetch CGPA and grade points for 200, and 300 level second semesters
+                // $firstLevelData = ResultCompute::where('class', 100)
+                //                             ->where('semester', 'second')
+                //                             ->where('session1', $acadSession)
+                //                             ->where('course', $programme)
+                //                             ->where('admission_no', $result->admission_no) 
+                //                             ->first();
+
+                $secondLevelData = ResultCompute::where('class', 200)
+                                                ->where('semester', 'second')
+                                                ->where('session1', $acadSession)
+                                                ->where('course', $programme)
+                                                ->where('admission_no', $result->admission_no) 
+                                                ->first();
+
+                $thirdLevelData = ResultCompute::where('class', 300)
+                                            ->where('semester', 'second')
+                                            ->where('session1', $acadSession)
+                                            ->where('course', $programme)
+                                            ->where('admission_no', $result->admission_no) // Assuming student_id exists
+                                            ->first();
+
+                // Fetch CGPAs for all 3 levels
+                // $cgpa100 = $firstLevelData ? $firstLevelData->cgpa : 0;
+                $cgpa200 = $secondLevelData ? $secondLevelData->cgpa : 0;
+                $cgpa300 = $thirdLevelData ? $thirdLevelData->cgpa : 0;
+
+                // Calculate total grade points and total course units for 200, and 300 level second semesters
+                // $totalGradePoints100 = $firstLevelData ? $firstLevelData->all_total_grade_point : 0;
+                // $totalCourseUnits100 = $firstLevelData ? $firstLevelData->all_total_course_unit : 0;
+
+                $totalGradePoints200 = $secondLevelData ? $secondLevelData->all_total_grade_point : 0;
+                $totalCourseUnits200 = $secondLevelData ? $secondLevelData->all_total_course_unit : 0;
+
+                $totalGradePoints300 = $thirdLevelData ? $thirdLevelData->all_total_grade_point : 0;
+                $totalCourseUnits300 = $thirdLevelData ? $thirdLevelData->all_total_course_unit : 0;
+
+                // Calculate the total CGPA (sum of grade points / sum of course units)
+                $totalGradePoints = $totalGradePoints200 + $totalGradePoints300;
+                $totalCourseUnits = $totalCourseUnits200 + $totalCourseUnits300;
+
+                $totalCgpa = ($totalCourseUnits > 0) ? $totalGradePoints / $totalCourseUnits : 0;
+
+                // Save the CGPAs for the 300 level second semester
+                if ($thirdLevelData) {
+                    $thirdLevelData->cgpa2 = $cgpa200;
+                    $thirdLevelData->cgpa3 = $cgpa300;
+                    $thirdLevelData->total_cgpa = $totalCgpa;
+                    $thirdLevelData->total_grade_point_new = $totalGradePoints;
+                    $thirdLevelData->total_course_unit_new = $totalCourseUnits;
+                    $thirdLevelData->save();
+                }
+            }
+            
+        }
+        
+    }
+
+
+    public function resultDelete(Request $request)
+    {
+        $request->validate([
+            'programme'     => 'required|string',
+            'acad_session'  => 'required|integer',
+            'stdLevel'      => 'required|string',
+            'semester'      => 'required|string',
+        ]);
+
+        $acadSession = $request->acad_session;
+        $programme = $request->programme;
+        $level = $request->stdLevel;
+        $semester = $request->semester;
+
+        $deleted = ResultCompute::where('course', $request->programme)
+                    ->where('session1', $request->acad_session)
+                    ->where('class', $request->stdLevel)
+                    ->where('semester', $request->semester)
+                    ->delete();
+
+        if ($deleted) {
+            //---Log Activity------
+                if (auth()->check()) {
+                    \App\Models\LogActivity::create([
+                        'user_id' => auth()->id(),
+                        'ip_address' => request()->ip(),
+                        'activity' => "Student results for {$acadSession} {$programme} {$level} {$semester} deleted by " . auth()->user()->last_name . ' ' . auth()->user()->first_name,
+                        'activity_date' => now(),
+                    ]);
+                }
+            return response()->json(['status' => 'success', 'message' => 'Results deleted successfully.']);
+        } else {
+            return response()->json(['status' => 'error', 'message' => 'No matching results found.'], 404);
+        }
+    }
+
+    public function preview(Request $request)
+    { 
+        // Validate the incoming request data
+        $validatedData = $request->validate([
+            'stdLevel'     => 'required|string',
+            'semester'     => 'required|string',
+            'acad_session' => 'required|string',
+            'programme'    => 'required|string',
+        ]);
+
+        // Retrieve validated input
+        $level       = $validatedData['stdLevel'];
+        $semester    = ucfirst(strtolower($validatedData['semester'])); 
+        $acadSession = $validatedData['acad_session'];
+        $programme   = $validatedData['programme'];
+
+        $courseStudy = CourseStudy::where('dept_name', $validatedData['programme'])->first();
+        $courseDuration = $courseStudy->dept_duration;
+        
+         if($courseDuration == 2 && $programme == 'Diploma in Community Health(CHEW)(DE)'){
+            // Define the mapping of level and semester combinations to methods
+            $methodMap = [
+                '200'  => ['First' => 'preview100First',  'Second' => 'preview100Second'],
+                '300'  => ['First' => 'preview100First',  'Second' => 'preview300Second'],               
+                
+            ];
+        }
+        
+         elseif($courseDuration == 2 && $programme == 'Diploma for Health Technicians'){
+            // Define the mapping of level and semester combinations to methods
+            $methodMap = [
+                '200'  => ['First' => 'preview100First',  'Second' => 'preview100Second'],
+                '300'  => ['First' => 'preview100First',  'Second' => 'preview300Second'],               
+                
+            ];
+        }
+
+        elseif($courseDuration == 2){
+            // Define the mapping of level and semester combinations to methods
+            $methodMap = [
+                '100'  => ['First' => 'preview100First',  'Second' => 'preview100Second'],
+                '200'  => ['First' => 'preview100First',  'Second' => 'preview300Second'],                
+                'NDI'  => ['First' => 'preview100First',  'Second' => 'preview100Second'],
+                'NDII' => ['First' => 'preview100First',  'Second' => 'preview300Second'],
+				'HNDI'  => ['First' => 'preview100First',  'Second' => 'preview100Second'],
+                'HNDII' => ['First' => 'preview100First',  'Second' => 'preview300Second'],
+            ];
+        }
+        elseif($courseDuration == 3){
+                // Define the mapping of level and semester combinations to methods
+                $methodMap = [
+                    '100'  => ['First' => 'preview100First',  'Second' => 'preview100Second'],
+                    '200'  => ['First' => 'preview100First',  'Second' => 'preview100Second'],
+                    '300'  => ['First' => 'preview100First',  'Second' => 'preview300Second'],                    
+                ];
+        }
+
+        // Check if the provided level and semester have a corresponding method
+        if (isset($methodMap[$level][$semester])) {
+            $method = $methodMap[$level][$semester];
+            return $this->$method($acadSession, $programme, $level, $semester, $request);
+        }        
+
+        // Handle other cases or return a default response
+        return redirect()->back()->with('error', 'Invalid selection made.');     
+
+        
+    }
+
+    public function preview100First($acadSession, $programme, $level, $semester,Request $request)
+    {
+
+        try {
+            // Query the results based on the validated data
+            $results = ResultCompute::where('course', $programme)
+                ->where('session1', $acadSession)
+                ->where('class', $level)
+                ->where('semester', $semester)
+                ->paginate(1);
+
+            // Check if the results are empty
+            if ($results->isEmpty()) {
+                \Log::info('No results found for the given parameters.');
+                return redirect()->route('result-compute-preview')->with('error', 'No results found.');
+            }
+
+            // Map the data into a format for the view
+            $studentData = $results->map(function ($item) {
+                return [
+                    'stusurname' => $item->student_full_name ?? 'No Name',
+                    'stuno' => $item->admission_no ?? 'No Matric No',
+                    'class' => $item->class ?? 'No Level',
+                    'coursekeep' => $item->course ?? 'No Programme',
+                    'studpicture' => $item->picture_dir ?? 'No Picture',
+                    'totalGradePoints' => $item->total_grade_point ?? 0,
+                    'totalUnits' => $item->total_course_unit ?? 0,
+                    'totalGPA' => $item->gpa ?? 0.0,
+                    'letterGrade' => $item->subjectgrade1 ?? 'No Grade',
+                    'remarks' => $item->remark ?? 'No Remarks',
+                    'failedRemarks' => $item->failed_course ?? 'No failed course',
+                    // Safely map course titles, grades, units, and scores
+                    'ctitles' => array_map(fn($i) => $item->{"ctitle{$i}"} ?? null, range(1, 17)),
+                    'subjects' => array_map(fn($i) => $item->{"subject{$i}"} ?? null, range(1, 16)),
+                    'subjectGrades' => array_map(fn($i) => $item->{"subjectgrade{$i}"} ?? null, range(1, 17)),
+                    'units' => array_map(fn($i) => $item->{"unit{$i}"} ?? null, range(1, 18)),
+                    'scores' => array_map(fn($i) => $item->{"score{$i}"} ?? null, range(1, 19)),
+                ];
+            });
+
+            $hod = hod::where('course', $programme)->first();
+            $grading = GradingSystem::first();
+            $grades = [
+                ['min' => $grading->grade01, 'max' => $grading->grade02, 'unit' => $grading->unit01, 'letter_grade' => $grading->lgrade1],
+                ['min' => $grading->grade11, 'max' => $grading->grade12, 'unit' => $grading->unit02, 'letter_grade' => $grading->lgrade2],
+                ['min' => $grading->grade21, 'max' => $grading->grade22, 'unit' => $grading->unit03, 'letter_grade' => $grading->lgrade3],
+                ['min' => $grading->grade31, 'max' => $grading->grade32, 'unit' => $grading->unit04, 'letter_grade' => $grading->lgrade4],
+                ['min' => $grading->grade41, 'max' => $grading->grade42, 'unit' => $grading->unit05, 'letter_grade' => $grading->lgrade5],
+                ['min' => $grading->grade51, 'max' => $grading->grade52, 'unit' => $grading->unit06, 'letter_grade' => $grading->lgrade6],
+            ];
+
+            //---Log Activity------
+                if (auth()->check()) {
+                    \App\Models\LogActivity::create([
+                        'user_id' => auth()->id(),
+                        'ip_address' => request()->ip(),
+                        'activity' => "Student results for {$acadSession} {$programme} {$level} {$semester} viewed by " . auth()->user()->last_name . ' ' . auth()->user()->first_name,
+                        'activity_date' => now(),
+                    ]);
+                }
+
+            // Render the view with the fetched data
+            return view('results.student_result_page', [
+                'results' => $results,
+                'studentData' => $studentData,
+                'semester' => $semester,
+                'grades' => $grades,
+                'hod' => $hod,
+            ]);
+        } catch (\Exception $e) {
+            // Log the exception for debugging
+            \Log::error('Error details: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
+
+            // Redirect with error message
+            return view('results.student_result_page')->with('error', 'An error occurred. Please try again later.');
+        }
+    }
+
+    public function preview100Second($acadSession, $programme, $level, $semester,Request $request)
+    {
+
+        try {
+            // Query the results based on the validated data
+            $results = ResultCompute::where('course', $programme)
+                ->where('session1', $acadSession)
+                ->where('class', $level)
+                ->where('semester', $semester)
+                ->paginate(1);
+
+            // Check if the results are empty
+            if ($results->isEmpty()) {
+                // \Log::info('No results found for the given parameters.');
+                return redirect()->route('result-compute-preview')->with('message', 'No results found.');
+            }
+
+            // Map the data into a format for the view
+            $studentData = $results->map(function ($item) {
+                return [
+                    'stusurname' => $item->student_full_name ?? 'No Name',
+                    'stuno' => $item->admission_no ?? 'No Matric No',
+                    'class' => $item->class ?? 'No Level',
+                    'coursekeep' => $item->course ?? 'No Programme',
+                    'studpicture' => $item->picture_dir ?? 'No Picture',
+                    'totalGradePoints' => $item->total_grade_point ?? 0,
+                    'totalUnits' => $item->total_course_unit ?? 0,
+                    'totalGPA' => $item->gpa1 ?? 0.0,
+                    'totalGPA2' => $item->gpa2 ?? 0.0,
+                    'totalCGPA' => $item->cgpa ?? 0.0,
+                    'letterGrade' => $item->subjectgrade1 ?? 'No Grade',
+                    'remarks' => $item->remark ?? 'No Remarks',
+                    'failedRemarks' => $item->failed_course ?? 'No failed course',
+                    // Safely map course titles, grades, units, and scores
+                    'ctitles' => array_map(fn($i) => $item->{"ctitle{$i}"} ?? null, range(1, 17)),
+                    'subjects' => array_map(fn($i) => $item->{"subject{$i}"} ?? null, range(1, 16)),
+                    'subjectGrades' => array_map(fn($i) => $item->{"subjectgrade{$i}"} ?? null, range(1, 17)),
+                    'units' => array_map(fn($i) => $item->{"unit{$i}"} ?? null, range(1, 18)),
+                    'scores' => array_map(fn($i) => $item->{"score{$i}"} ?? null, range(1, 19)),
+                ];
+            });
+
+            $hod = hod::where('course', $programme)->first();
+            $grading = GradingSystem::first();
+            $grades = [
+                ['min' => $grading->grade01, 'max' => $grading->grade02, 'unit' => $grading->unit01, 'letter_grade' => $grading->lgrade1],
+                ['min' => $grading->grade11, 'max' => $grading->grade12, 'unit' => $grading->unit02, 'letter_grade' => $grading->lgrade2],
+                ['min' => $grading->grade21, 'max' => $grading->grade22, 'unit' => $grading->unit03, 'letter_grade' => $grading->lgrade3],
+                ['min' => $grading->grade31, 'max' => $grading->grade32, 'unit' => $grading->unit04, 'letter_grade' => $grading->lgrade4],
+                ['min' => $grading->grade41, 'max' => $grading->grade42, 'unit' => $grading->unit05, 'letter_grade' => $grading->lgrade5],
+                ['min' => $grading->grade51, 'max' => $grading->grade52, 'unit' => $grading->unit06, 'letter_grade' => $grading->lgrade6],
+            ];
+
+            //---Log Activity------
+                if (auth()->check()) {
+                    \App\Models\LogActivity::create([
+                        'user_id' => auth()->id(),
+                        'ip_address' => request()->ip(),
+                        'activity' => "Student results for {$acadSession} {$programme} {$level} {$semester} viewed by " . auth()->user()->last_name . ' ' . auth()->user()->first_name,
+                        'activity_date' => now(),
+                    ]);
+                }
+
+            // Render the view with the fetched data
+            return view('results.student_result_page1', [
+                'results' => $results,
+                'studentData' => $studentData,
+                'semester' => $semester,
+                'grades' => $grades,
+                'hod' => $hod,
+            ]);
+        } catch (\Exception $e) {
+            // Log the exception for debugging
+            \Log::error('Error details: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
+
+            // Redirect with error message
+            return view('results.student_result_page1')->with('error', 'An error occurred. Please try again later.');
+        }
+    }
+
+    public function preview300Second($acadSession, $programme, $level, $semester,Request $request)
+    {
+
+        try {
+            // Query the results based on the validated data
+            $results = ResultCompute::where('course', $programme)
+                ->where('session1', $acadSession)
+                ->where('class', $level)
+                ->where('semester', $semester)
+                ->paginate(1);
+
+            // Check if the results are empty
+            if ($results->isEmpty()) {
+                // \Log::info('No results found for the given parameters.');
+                return redirect()->route('result-compute-preview')->with('message', 'No results found.');
+            }
+
+            // Map the data into a format for the view
+            $studentData = $results->map(function ($item) {
+                return [
+                    'stusurname' => $item->student_full_name ?? 'No Name',
+                    'stuno' => $item->admission_no ?? 'No Matric No',
+                    'class' => $item->class ?? 'No Level',
+                    'coursekeep' => $item->course ?? 'No Programme',
+                    'studpicture' => $item->picture_dir ?? 'No Picture',
+                    'totalGradePoints' => $item->total_grade_point ?? 0,
+                    'totalUnits' => $item->total_course_unit ?? 0,
+                    'totalGPA' => $item->gpa1 ?? 0.0,
+                    'totalGPA2' => $item->gpa2 ?? 0.0,
+                    'totalCGPA' => $item->cgpa ?? 0.0,
+                    'letterGrade' => $item->subjectgrade1 ?? 'No Grade',
+                    'remarks' => $item->remark ?? 'No Remarks',
+                    'failedRemarks' => $item->failed_course ?? 'No failed course',
+                    'cgpa1' => $item->cgpa1 ?? 0.0,
+                    'cgpa2' => $item->cgpa2 ?? 0.0,
+                    'cgpa3' => $item->cgpa3 ?? 0.0,
+                    'totalCGPANEW' => $item->total_cgpa ?? 0.0,
+                    'total_grade_point_new' => $item->total_grade_point_new,
+                    'total_course_unit_new' => $item->total_course_unit_new,
+                    // Safely map course titles, grades, units, and scores
+                    'ctitles' => array_map(fn($i) => $item->{"ctitle{$i}"} ?? null, range(1, 17)),
+                    'subjects' => array_map(fn($i) => $item->{"subject{$i}"} ?? null, range(1, 16)),
+                    'subjectGrades' => array_map(fn($i) => $item->{"subjectgrade{$i}"} ?? null, range(1, 17)),
+                    'units' => array_map(fn($i) => $item->{"unit{$i}"} ?? null, range(1, 18)),
+                    'scores' => array_map(fn($i) => $item->{"score{$i}"} ?? null, range(1, 19)),
+                ];
+            });
+
+            $hod = hod::where('course', $programme)->first();
+            $grading = GradingSystem::first();
+            $grades = [
+                ['min' => $grading->grade01, 'max' => $grading->grade02, 'unit' => $grading->unit01, 'letter_grade' => $grading->lgrade1],
+                ['min' => $grading->grade11, 'max' => $grading->grade12, 'unit' => $grading->unit02, 'letter_grade' => $grading->lgrade2],
+                ['min' => $grading->grade21, 'max' => $grading->grade22, 'unit' => $grading->unit03, 'letter_grade' => $grading->lgrade3],
+                ['min' => $grading->grade31, 'max' => $grading->grade32, 'unit' => $grading->unit04, 'letter_grade' => $grading->lgrade4],
+                ['min' => $grading->grade41, 'max' => $grading->grade42, 'unit' => $grading->unit05, 'letter_grade' => $grading->lgrade5],
+                ['min' => $grading->grade51, 'max' => $grading->grade52, 'unit' => $grading->unit06, 'letter_grade' => $grading->lgrade6],
+            ];
+
+            //---Log Activity------
+                if (auth()->check()) {
+                    \App\Models\LogActivity::create([
+                        'user_id' => auth()->id(),
+                        'ip_address' => request()->ip(),
+                        'activity' => "Student results for {$acadSession} {$programme} {$level} {$semester} viewed by " . auth()->user()->last_name . ' ' . auth()->user()->first_name,
+                        'activity_date' => now(),
+                    ]);
+                }
+
+            // Render the view with the fetched data
+            return view('results.student_result_page2', [
+                'results' => $results,
+                'studentData' => $studentData,
+                'semester' => $semester,
+                'grades' => $grades,
+                'hod' => $hod,
+            ]);
+        } catch (\Exception $e) {
+            // Log the exception for debugging
+            \Log::error('Error details: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
+
+            // Redirect with error message
+            return view('results.student_result_page1')->with('error', 'An error occurred. Please try again later.');
+        }
+    }
+
+    public function semesterResult()
+    {
+        $user = auth()->user();
+        $rolePermission = $user->semester_result;
+
+        if($rolePermission != 1) {
+            return redirect()->back()->with('error', 'You do not have permission to this module.');
+        }
+        
+        if ($user->user_type_status == 1 || $user->department == "ICT") {
+            // Superadmin or ICT department → see all programmes
+            $programmes = CourseStudyAll::orderBy('department', 'asc')->get();
+        } else {
+            // Other users → only see their department’s programmes
+            $programmes = CourseStudyAll::where('dept', $user->department)
+                ->orderBy('department', 'asc')
+                ->get();
+        }
+        $allLevel = StudentLevel::all();
+
+        return view('layout.semester-result', compact('programmes','allLevel'));
+    }
+
+    public function semesterResultAction(Request $request)
+    {
+        $validated = $request->validate([
+            'programme' => 'required|string',
+            'acad_session' => 'required|string',
+            'stdLevel' => 'required|string',
+            'semester' => 'required|string',
+        ]);
+    
+        $results = ResultCompute::where('course', $validated['programme'])
+            ->where('session1', $validated['acad_session'])
+            ->where('semester', $validated['semester'])
+            ->where('class', $validated['stdLevel'])
+            ->orderby('admission_no', 'asc')
+            ->get(); 
+
+        $programme = $validated['programme'];
+        $acadsession = $validated['acad_session'];
+        $stdLevel = $validated['stdLevel'];
+        $semester = $validated['semester'];
+        
+        //---Log Activity------
+                if (auth()->check()) {
+                    \App\Models\LogActivity::create([
+                        'user_id' => auth()->id(),
+                        'ip_address' => request()->ip(),
+                        'activity' => "Semester results for {$acadsession} {$programme} {$stdLevel} {$semester} viewed by " . auth()->user()->last_name . ' ' . auth()->user()->first_name,
+                        'activity_date' => now(),
+                    ]);
+                }
+        
+        return view('layout.semester-result-view', compact('results','programme','semester','acadsession','stdLevel'));
+    }
+
+    public function semesterSummary()
+    {
+        $user = auth()->user();
+        $rolePermission = $user->semester_summary;
+
+        if($rolePermission != 1) {
+            return redirect()->back()->with('error', 'You do not have permission to this module.');
+        }
+        
+        if ($user->user_type_status == 1 || $user->department == "ICT") {
+            // Superadmin or ICT department → see all programmes
+            $programmes = CourseStudyAll::orderBy('department', 'asc')->get();
+        } else {
+            // Other users → only see their department’s programmes
+            $programmes = CourseStudyAll::where('dept', $user->department)
+                ->orderBy('department', 'asc')
+                ->get();
+        }
+        $allLevel = StudentLevel::all();
+
+        return view('layout.semester-result-summary', compact('programmes','allLevel'));
+    }
+
+    public function semesterSummaryAction(Request $request)
+    {
+        $validated = $request->validate([
+            'programme' => 'required|string',
+            'acad_session' => 'required|string',
+            'stdLevel' => 'required|string',            
+        ]);
+    
+        $results = ResultCompute::where('course', $validated['programme'])
+            ->where('session1', $validated['acad_session'])
+            ->where('semester', 'Second')
+            ->where('class', $validated['stdLevel'])
+            ->get(); 
+
+        $programme = $validated['programme'];
+        $acadsession = $validated['acad_session'];
+        $stdLevel = $validated['stdLevel']; 
+        $semester = 'Second';      
+        
+        //---Log Activity------
+                if (auth()->check()) {
+                    \App\Models\LogActivity::create([
+                        'user_id' => auth()->id(),
+                        'ip_address' => request()->ip(),
+                        'activity' => "Semester results summary for {$acadsession} {$programme} {$stdLevel} {$semester} viewed by " . auth()->user()->last_name . ' ' . auth()->user()->first_name,
+                        'activity_date' => now(),
+                    ]);
+                }
+        
+        return view('layout.semester-result-summary-view', compact('results','programme','acadsession','stdLevel'));
+    }
+
+    public function studentTranscript()
+    {
+        $user = auth()->user();
+        $rolePermission = $user->student_transcript;
+
+        if($rolePermission != 1) {
+            return redirect()->back()->with('error', 'You do not have permission to this module.');
+        }
+        
+         if ($user->user_type_status == 1 || $user->department == "ICT") {
+            // Superadmin or ICT department → see all programmes
+            $programmes = CourseStudyAll::orderBy('department', 'asc')->get();
+        } else {
+            // Other users → only see their department’s programmes
+            $programmes = CourseStudyAll::where('dept', $user->department)
+                ->orderBy('department', 'asc')
+                ->get();
+        }
+        $allLevel = StudentLevel::all();        
+
+        return view('results.student_transcript', compact('programmes','allLevel'));
+    }
+
+    public function studentTranscriptAction(Request $request)
+    {
+        // Validate the request
+        $request->validate([
+            'programme' => 'required|string',
+            'acad_session' => 'required|integer'
+        ]);
+
+        $programme = $request->programme;
+        $admissionYear = $request->acad_session;
+        // Fetch students who match the given programme and admission year
+        $students = Registration::where('course', $programme)
+            ->where('admission_year', $admissionYear)
+            ->orderBy('admission_no', 'asc')
+            ->get();
+
+            //---Log Activity------
+                if (auth()->check()) {
+                    \App\Models\LogActivity::create([
+                        'user_id' => auth()->id(),
+                        'ip_address' => request()->ip(),
+                        'activity' => "Student Transcript for {$admissionYear} {$programme} viewed by " . auth()->user()->last_name . ' ' . auth()->user()->first_name,
+                        'activity_date' => now(),
+                    ]);
+                }
+
+        // Return view with students
+        return view('results.student_transcript_view', compact('students','programme', 'admissionYear'));
+    }
+
+    public function studentTranscriptPreview(Request $request)
+    {
+        $validated = $request->validate([
+            'stdLevel' => 'required|string',
+            'acad_session' => 'required|string',
+            'programme' => 'required|string',
+            'admission_no' => 'required|string',
+        ]);
+    
+        $level = $validated['stdLevel'];
+        $acadSession = $validated['acad_session'];
+        $programme = $validated['programme'];
+        $admissionNo = $validated['admission_no'];
+    
+        $courseStudy = CourseStudy::where('dept_name', $programme)->first();
+        $courseDuration = $courseStudy->dept_duration;
+    
+        if ($courseDuration == 2 && $level == '100') {
+            $levels = ['100', '200'];
+        } elseif ($courseDuration == 2 && $level == 'NDI') {
+            $levels = ['NDI', 'NDII'];
+        } elseif ($courseDuration == 2 && $level == 'HNDI') {
+            $levels = ['HNDI', 'HNDII'];
+        } elseif ($courseDuration == 3 && $level == '100') {
+            $levels = ['100', '200', '300'];
+        }
+    
+        $semesters = ['First', 'Second'];
+        $allSemesters = [];
+    
+        foreach ($levels as $lvl) {
+            foreach ($semesters as $sem) {
+                $results = ResultCompute::where('course', $programme)
+                    ->where('session1', $acadSession)
+                    ->where('admission_no', $admissionNo)
+                    ->where('class', $lvl)
+                    ->where('semester', $sem)
+                    ->get();
+    
+                if ($results->isEmpty()) continue;
+    
+                $studentData = $results->map(function ($item) use ($courseDuration) {
+                    return [
+                        'stusurname' => $item->student_full_name,
+                        'stuno' => $item->admission_no,
+                        'class' => $item->class,
+                        'coursekeep' => $item->course,
+                        'studpicture' => $item->picture_dir,
+                        'totalGradePoints' => $item->total_grade_point,
+                        'totalUnits' => $item->total_course_unit,
+                        'totalGPA' => $item->gpa,
+                        'gpa1' => $item->gpa1 ?? 0.0,
+                        'gpa2' => $item->gpa2 ?? 0.0,
+                        'cgpa' => $item->cgpa ?? 0.0,
+                        'cgpa1' => $item->cgpa1 ?? 0.0,
+                        'cgpa2' => $item->cgpa2 ?? 0.0,
+                        'cgpa3' => $item->cgpa3 ?? 0.0,
+                        'totalcgpa' => $item->total_cgpa ?? 0.0,
+                        'letterGrade' => $item->subjectgrade1,
+                        'remarks' => $item->remark,
+                        'failedRemarks' => $item->failed_course,
+                        'ctitles' => array_map(fn($i) => $item->{"ctitle{$i}"} ?? null, range(1, 17)),
+                        'subjects' => array_map(fn($i) => $item->{"subject{$i}"} ?? null, range(1, 16)),
+                        'subjectGrades' => array_map(fn($i) => $item->{"subjectgrade{$i}"} ?? null, range(1, 17)),
+                        'units' => array_map(fn($i) => $item->{"unit{$i}"} ?? null, range(1, 18)),
+                        'scores' => array_map(fn($i) => $item->{"score{$i}"} ?? null, range(1, 19)),
+                        'courseDuration' => $courseDuration, 
+                    ];
+                });
+    
+                $allSemesters[] = [
+                    'level' => $lvl,
+                    'semester' => $sem,
+                    'studentData' => $studentData,
+                ];
+            }
+        }
+    
+        $grading = GradingSystem::first();
+        $hod = hod::where('course', $programme)->first();
+    
+        $grades = [
+            ['min' => $grading->grade01, 'max' => $grading->grade02, 'unit' => $grading->unit01, 'letter_grade' => $grading->lgrade1],
+            ['min' => $grading->grade11, 'max' => $grading->grade12, 'unit' => $grading->unit02, 'letter_grade' => $grading->lgrade2],
+            ['min' => $grading->grade21, 'max' => $grading->grade22, 'unit' => $grading->unit03, 'letter_grade' => $grading->lgrade3],
+            ['min' => $grading->grade31, 'max' => $grading->grade32, 'unit' => $grading->unit04, 'letter_grade' => $grading->lgrade4],
+            ['min' => $grading->grade41, 'max' => $grading->grade42, 'unit' => $grading->unit05, 'letter_grade' => $grading->lgrade5],
+            ['min' => $grading->grade51, 'max' => $grading->grade52, 'unit' => $grading->unit06, 'letter_grade' => $grading->lgrade6],
+        ];
+
+
+         //---Log Activity------
+                if (auth()->check()) {
+                    \App\Models\LogActivity::create([
+                        'user_id' => auth()->id(),
+                        'ip_address' => request()->ip(),
+                        'activity' => "Student({$admissionNo}) Transcript viewed by " . auth()->user()->last_name . ' ' . auth()->user()->first_name,
+                        'activity_date' => now(),
+                    ]);
+                }
+    
+        return view('results.student_full_transcript', compact('allSemesters', 'grades', 'hod'));
+    
+    }
+
+    public function cgpaSummary()
+    {
+        // return redirect()->route('page-development'); 
+        $user = auth()->user();
+        $rolePermission = $user->cgpa_summary;
+
+        if($rolePermission != 1) {
+            return redirect()->back()->with('error', 'You do not have permission to this module.');
+        }
+        
+        if ($user->user_type_status == 1 || $user->department == "ICT") {
+            // Superadmin or ICT department → see all programmes
+            $programmes = CourseStudyAll::orderBy('department', 'asc')->get();
+        } else {
+            // Other users → only see their department’s programmes
+            $programmes = CourseStudyAll::where('dept', $user->department)
+                ->orderBy('department', 'asc')
+                ->get();
+        }
+        $allLevel = StudentLevel::all();
+
+        return view('layout.cgpa-summary', compact('programmes','allLevel'));
+    }
+
+    public function cgpaSummaryAction(Request $request)
+    {
+        $validated = $request->validate([
+            'programme'     => 'required|string',
+            'acad_session'  => 'required|string',
+        ]);
+    
+        $programme = $validated['programme'];
+        $acadsession = $validated['acad_session'];
+    
+        // Get programme info
+        $programmeInfo = CourseStudyAll::where('department', $programme)->first();
+        if (!$programmeInfo) {
+            return back()->with('error', 'Programme not found.');
+        }
+    
+        $startLevel  = strtoupper($programmeInfo->start_level);
+        $duration    = (int) $programmeInfo->duration;
+    
+        // Define all possible sequences
+        $allSequences = [
+            '100'  => ['100', '200', '300'],
+            '200'  => ['200', '300'],
+            'NDI'  => ['NDI', 'NDII'],
+            'HNDI' => ['HNDI', 'HNDII'],
+        ];
+    
+        $levels = array_slice($allSequences[$startLevel] ?? [], 0, $duration);
+        $semesters = ['First', 'Second'];
+        $cgpaData = [];
+    
+        // Fetch distinct students with at least one result
+        $students = ResultCompute::where('course', $programme)
+            ->where('session1', $acadsession)
+            ->select('admission_no', 'student_full_name')
+            ->distinct('admission_no')
+            ->get();
+    
+        foreach ($students as $student) {
+            $studentCgpaData = [];
+            $studentYearly = [];
+            $totalGradePoints = 0;
+            $totalUnits = 0;
+    
+            foreach ($levels as $level) {
+                $semesterGpas = [];
+    
+                foreach ($semesters as $semester) {
+                    $result = ResultCompute::where('course', $programme)
+                        ->where('session1', $acadsession)
+                        ->where('class', $level)
+                        ->where('semester', $semester)
+                        ->where('admission_no', $student->admission_no)
+                        ->first();
+    
+                    if ($result) {
+                        $gpa = $result->gpa;
+                        $studentCgpaData[] = [
+                            'level'     => $level,
+                            'semester'  => $semester,
+                            'gpa'       => $gpa,
+                            'cgpa'      => $result->cgpa ?? null,
+                            'available' => true,
+                        ];
+    
+                        // Accumulate totals for final CGPA
+                        if ($result->total_grade_point && $result->total_course_unit) {
+                            $totalGradePoints += $result->total_grade_point;
+                            $totalUnits += $result->total_course_unit;
+                        }
+                        $semesterGpas[] = $gpa;
+                    } else {
+                        // Optional: include empty entry for view consistency
+                        $studentCgpaData[] = [
+                            'level'     => $level,
+                            'semester'  => $semester,
+                            'gpa'       => null,
+                            'cgpa'      => null,
+                            'available' => false,
+                        ];
+                    }
+                }
+    
+                // Compute yearly CGPA for this level
+                if (count($semesterGpas) === 2) {
+                    $studentYearly[$level] = array_sum($semesterGpas) / 2;
+                } elseif (count($semesterGpas) === 1) {
+                    $studentYearly[$level] = $semesterGpas[0];
+                } else {
+                    $studentYearly[$level] = null;
+                }
+            }
+    
+            // Compute final CGPA (weighted)
+            $studentFinalCgpa = $totalUnits > 0 ? $totalGradePoints / $totalUnits : null;
+    
+            $cgpaData[$student->admission_no] = [
+                'student'             => $student,
+                'semesters'           => $studentCgpaData,
+                'yearly'              => $studentYearly,
+                'final'               => $studentFinalCgpa,
+                'total_grade_points'  => $totalGradePoints,
+                'total_course_units'  => $totalUnits,
+            ];
+        }
+    
+        // Log Activity
+        if (auth()->check()) {
+            \App\Models\LogActivity::create([
+                'user_id'       => auth()->id(),
+                'ip_address'    => request()->ip(),
+                'activity'      => "CGPA summary for {$acadsession} {$programme} viewed by "
+                                    . auth()->user()->last_name . ' ' . auth()->user()->first_name,
+                'activity_date' => now(),
+            ]);
+        }
+    
+        return view('layout.cgpa-summary-view', compact(
+            'cgpaData',
+            'programme',
+            'acadsession',
+            'levels',
+            'semesters'
+        ));
+    }
+
+
+    public function resultResit(Request $request)
+    {
+        $validatedData = $request->validate([
+            'stdLevel'     => 'required|string',
+            'semester'     => 'required|string',
+            'acad_session' => 'required|string',
+            'programme'    => 'required|string',
+        ]);
+
+        $currentLevel   = (int) $validatedData['stdLevel'];
+        $currentSemester = ucfirst(strtolower($validatedData['semester']));
+        $acadSession    = $validatedData['acad_session'];
+        $programme      = $validatedData['programme'];
+
+        // 🔁 Determine previous level and semester
+        if ($currentSemester === 'First') {
+            $previousSemester = 'Second';
+            $previousLevel = $currentLevel - 100;
+        } else {
+            $previousSemester = 'First';
+            $previousLevel = $currentLevel;
+        }
+
+        // Check course study
+        $courseStudy = CourseStudy::where('dept_name', $programme)->first();
+        $courseDuration = $courseStudy->dept_duration ?? null;
+
+        // Fetch students
+        $students = Registration::where('course', $programme)
+            ->where('admission_year', $acadSession)
+            ->get();
+
+        if ($students->isEmpty()) {
+            return redirect()->back()->with('error', 'Students unavailable');
+        }
+
+        $studentsWithFailedCourses = [];
+
+        foreach ($students as $student) {
+            $failed = DB::table('result_computes')
+                ->where('admission_no', $student->admission_no)
+                ->where('class', $previousLevel)
+                ->where('semester', $previousSemester)
+                ->where('session1', $acadSession)
+                ->first();
+
+            if ($failed && !empty($failed->failed_course)) {
+                $failedCourses = array_map('trim', explode(',', $failed->failed_course));
+                $studentsWithFailedCourses[] = [
+                    'student' => $student,
+                    'failed_courses' => $failedCourses,
+                    'previous_level' => $previousLevel,
+                    'previous_semester' => $previousSemester,
+                ];
+            }
+        }
+
+        if (empty($studentsWithFailedCourses)) {
+            return redirect()->back()->with('error', 'No failed courses found for selected criteria.');
+        }
+
+        return view('layout.result-resit', compact(
+            'studentsWithFailedCourses', 'programme', 'acadSession', 'currentLevel', 'currentSemester'
+        ));
+    }
+
+    public function processResit(Request $request)
+    {
+        //dd($request->all());
+
+        $validated = $request->validate([
+            'admission_no' => 'required|exists:registrations,admission_no',
+            'currentLevel'   => 'required|string',
+            'currentSemester'=> 'required|string',
+            'programme'      => 'required|string',
+            'acadSession'    => 'required|string',
+        ]);
+
+
+        // return response()->json([$validated]);
+        $studentId       = $validated['admission_no'];
+        $currentLevel    = $validated['currentLevel'];
+        $currentSemester = ucfirst(strtolower($validated['currentSemester']));
+        $programme = $validated['programme'];
+        $acadSession = $validated['acadSession'];
+
+        // Fetch student
+        $student = Registration::where('admission_no', $studentId);
+        if (!$student) {
+            return back()->with('error', 'Student not found.');
+        }
+
+        // Check if result exists for current level/semester
+        $result = Result::where('admission_no', $studentId)
+                        ->where('class', $currentLevel)
+                        ->where('semester', $currentSemester)
+                        ->first();
+
+        // If result does not exist, call function to generate result
+        if (!$result) {
+            $this->generateResultForLevel($programme, $acadSession, $currentLevel, $currentSemester); // <--- Custom function
+            $result = Result::where('admission_no', $studentId)
+                            ->where('class', $currentLevel)
+                            ->where('semester', $currentSemester)
+                            ->first();
+
+            if (!$result) {
+                return back()->with('error', "Results not yet processed for {$currentLevel}/{$currentSemester}.");
+            }
+        }
+
+        // Determine previous semester and level
+        $previousSemester = strtolower($currentSemester) === 'second' ? 'first' : 'second';
+        $previousLevel = strtolower($currentSemester) === 'second'
+            ? $currentLevel
+            : ((int)$currentLevel - 100); // if first semester, previous level is one level before
+
+        if ($previousLevel < 100) {
+            return back()->with('info', 'No previous level to fetch failed courses from.');
+        }
+
+        // Fetch failed courses from result_computes (previous level/semester)
+        $compute = ResultCompute::where('admission_no', $studentId)
+            ->where('class', $previousLevel)
+            ->where('semester', ucfirst($previousSemester))
+            ->first();
+
+        if (!$compute || !$compute->failed_course) {
+            return back()->with('info', 'No failed courses found for previous level/semester.');
+        }
+
+        $failedCourses = array_map('trim', explode(',', $compute->failed_course));
+
+        // Get existing subjects to avoid duplicates
+        $existingSubjects = [];
+        for ($i = 1; $i <= 15; $i++) {
+            if (!empty($result["ctitle$i"])) {
+                $existingSubjects[] = strtoupper(trim($result["ctitle$i"]));
+            }
+        }
+
+        // Append failed courses (non-duplicate)
+        $added = 0;
+        $nextIndex = count($existingSubjects) + 1;
+
+        foreach ($failedCourses as $courseCode) {
+            $courseCode = strtoupper(trim($courseCode));
+            if (in_array($courseCode, $existingSubjects)) {
+                continue;
+            }
+
+            if ($nextIndex > 15) break;
+
+            $course = Course::where('course_code', $courseCode)->first();
+            if (!$course) continue;
+
+            $result->{"ctitle$nextIndex"} = $course->course_code;
+            $result->{"unit$nextIndex"}   = $course->course_unit;
+            $result->{"subject$nextIndex"}= $course->course_title;
+            $result->{"score$nextIndex"}  = 0;
+
+            $added++;
+            $nextIndex++;
+        }
+
+        $result->no_of_course = ($result->no_of_course ?? 0) + $added;
+        $result->save();
+
+        if ($added === 0) { 
+            return back()->with('error', 'All failed courses from the previous level/semester have already been added.');
+        }
+
+        //---Log Activity------
+                if (auth()->check()) {
+                    \App\Models\LogActivity::create([
+                        'user_id' => auth()->id(),
+                        'ip_address' => request()->ip(),
+                        'activity' => "Student result resit ($added failed course(s) added successfully to {$currentLevel}/{$currentSemester}) by " . auth()->user()->last_name . ' ' . auth()->user()->first_name,
+                        'activity_date' => now(),
+                    ]);
+                }
+        
+        return back()->with('success', "$added failed course(s) added successfully to {$currentLevel}/{$currentSemester}.");
+    }
+
+    protected function generateResultForLevel($programme, $acadSession, $currentLevel, $currentSemester)
+    {
+        $user = auth()->user();      
+
+        $admissionYear = $acadSession;
+        $programme = $programme;
+        $stdLevel = $currentLevel;
+        $semester = $currentSemester;
+        $year = $acadSession;
+
+        // Check curriculum
+        $curriculumExist = Course::where('course', $programme)->exists();
+        if (!$curriculumExist) {
+            return redirect()->back()->with('error', 'Curriculum for this course is unavailable.');
+        }
+
+        // Get registered students
+        $students = Registration::where('course', $programme)
+            // ->where('class', $stdLevel)
+            ->where('admission_year', $year)
+            ->get();
+        if ($students->isEmpty()) {
+            return redirect()->back()->with('error', 'No students found for this academic session.');
+        }
+
+        // Get assigned courses
+        $courses = Course::where('course', $programme)
+            ->where('level', $stdLevel)
+            ->where('semester', $semester)
+            ->get();
+
+        // Get existing results
+        $existingResults = Result::where('course', $programme)
+            ->where('class', $stdLevel)
+            ->where('session1', $year)
+            ->where('semester', $semester)
+            ->get();
+
+        //  If results exist, ensure new students are added
+        if ($existingResults->isNotEmpty()) {
+            $existingAdmissionNumbers = $existingResults->pluck('admission_no')->toArray();
+
+            foreach ($students as $student) {
+                if (!in_array($student->admission_no, $existingAdmissionNumbers)) {
+                    // Create result entry for the student not in result table
+                    $resultData = new Result();
+                    $resultData->admission_no = $student->admission_no;
+                    $resultData->surname = $student->surname;
+                    $resultData->first_name = $student->first_name;
+                    $resultData->other_name = $student->other_name;
+                    $resultData->semester = $semester;
+                    $resultData->course = $programme;
+                    $resultData->class = $stdLevel;
+                    $resultData->session1 = $year;
+                    $resultData->picture_dir = $student->picture_dir;
+
+                    $courseIndex = 1;
+                    foreach ($courses as $course) {
+                        $resultData->{'subject' . $courseIndex} = $course->course_title;
+                        $resultData->{'ctitle' . $courseIndex} = $course->course_code;
+                        $resultData->{'unit' . $courseIndex} = $course->course_unit;
+                        $resultData->{'score' . $courseIndex} = 0;
+                        $courseIndex++;
+                    }
+
+                    $resultData->no_of_course = $courses->count();
+                    $resultData->save();
+
+                    // Add new result to existing collection
+                    $existingResults->push($resultData);
+                }
+            }
+
+            // Prepare result scores
+            $studentScores = [];
+            foreach ($existingResults as $result) {
+                foreach ($courses as $course) {
+                    $courseIndex = $courses->search(function ($item) use ($course) {
+                        return $item->course_title === $course->course_title;
+                    }) + 1;
+
+                    $studentScores[$result->admission_no][$course->id] = $result->{'score' . $courseIndex} ?? 0;
+                }
+            }
+            
+        }
+
+        if ($existingResults->isEmpty()) {
+           //  If no results exist, create result entries for all
+            foreach ($students as $student) {
+                $resultData = new Result();
+                $resultData->admission_no = $student->admission_no;
+                $resultData->surname = $student->surname;
+                $resultData->first_name = $student->first_name;
+                $resultData->other_name = $student->other_name;
+                $resultData->semester = $semester;
+                $resultData->course = $programme;
+                $resultData->class = $stdLevel;
+                $resultData->session1 = $year;
+                $resultData->picture_dir = $student->picture_dir;
+
+                $courseIndex = 1;
+                foreach ($courses as $course) {
+                    $resultData->{'subject' . $courseIndex} = $course->course_title;
+                    $resultData->{'ctitle' . $courseIndex} = $course->course_code;
+                    $resultData->{'unit' . $courseIndex} = $course->course_unit;
+                    $resultData->{'score' . $courseIndex} = 0;
+                    $courseIndex++;
+                }
+
+                $resultData->no_of_course = $courses->count();
+                $resultData->save();
+            }
+        
+        }
+    }
+
+    public function fetchFailedCourses(Request $request)
+    {
+        $admissionNo = $request->admission_no;
+        $level = $request->level;
+        $semester = $request->semester;
+        $admissionYear = $request->admissionYear;
+
+        // ✅ Check if computation exists first
+        $computationExists = DB::table('result_computes')
+            ->where('class', $level)
+            ->where('semester', $semester)
+            ->where('session1', $admissionYear)
+            ->exists();
+
+        if (!$computationExists) {
+            return response()->json(['failedCourses' => []]);
+        }
+
+        // ✅ Get failed courses for CURRENT level & semester
+        $computedResult = DB::table('result_computes')
+            ->where('admission_no', $admissionNo)
+            ->where('class', $level)
+            ->where('semester', $semester)
+            ->where('session1', $admissionYear)
+            ->first();
+
+        if (!$computedResult || empty($computedResult->failed_course)) {
+            return response()->json(['failedCourses' => []]);
+        }
+
+        $failedCourses = array_map('trim', explode(',', $computedResult->failed_course));
+
+        // ✅ Get current result entry
+        $currentResult = DB::table('results')
+            ->where('admission_no', $admissionNo)
+            ->where('class', $level)
+            ->where('semester', $semester)
+            ->where('session1', $admissionYear)
+            ->first();
+
+        if (!$currentResult) {
+            return response()->json(['failedCourses' => []]);
+        }
+
+        $filtered = [];
+
+        foreach ($failedCourses as $failedCourse) {
+            for ($i = 1; $i <= 50; $i++) {
+
+                $ctitleKey = 'ctitle' . $i;
+                $scoreKey = 'score' . $i;
+                $subjectKey = 'subject' . $i;
+
+                if (
+                    isset($currentResult->$ctitleKey) &&
+                    strtoupper(trim($currentResult->$ctitleKey)) === strtoupper($failedCourse)
+                ) {
+                    $filtered[] = [
+                        'course_code' => $failedCourse,
+                        'current_score' => $currentResult->$scoreKey,
+                        'subject' => $currentResult->$subjectKey,
+                        'index' => $i,
+                    ];
+                    break;
+                }
+            }
+        }
+
+        return response()->json(['failedCourses' => $filtered]);
+    }
+
+
+   public function saveResitScores(Request $request)
+    {
+        \Log::info('Incoming Resit Scores Request:', $request->all());
+
+        $validated = $request->validate([
+            'resit_scores' => 'required|array',
+            'resit_scores.*.course_code' => 'required|string',
+            'resit_scores.*.resit_score' => 'required|numeric|min:0|max:100',
+            'student_id' => 'required|string',
+            'level' => 'required|string',
+            'semester' => 'required|string',
+            'admission_year' => 'required|string',
+        ]);
+
+        $studentId     = $validated['student_id'];
+        $level         = $validated['level'];
+        $semester      = $validated['semester'];
+        $admissionYear = $validated['admission_year'];
+
+        // Get student result record
+        $result = DB::table('results')
+            ->where('admission_no', $studentId)
+            ->where('class', $level)
+            ->where('semester', $semester)
+            ->where('session1', $admissionYear)
+            ->first();
+
+        if (!$result) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Result record not found.'
+            ]);
+        }
+
+        foreach ($validated['resit_scores'] as $resitData) {
+
+            $courseCode = strtoupper(trim($resitData['course_code']));
+            $resitScore = $resitData['resit_score'];
+
+            $columnIndex = null;
+            $courseTitle = null;
+            $failedScore = null;
+
+            // 🔎 Find the course column dynamically
+            for ($i = 1; $i <= 50; $i++) {
+
+                $ctitleCol = 'ctitle' . $i;
+                $scoreCol  = 'score' . $i;
+                $subjectCol = 'subject' . $i;
+
+                if (
+                    isset($result->$ctitleCol) &&
+                    strtoupper(trim($result->$ctitleCol)) === $courseCode
+                ) {
+                    $columnIndex = $i;
+                    $courseTitle = $result->$subjectCol ?? null;
+                    $failedScore = $result->$scoreCol ?? 0;
+                    break;
+                }
+            }
+
+            if ($columnIndex) {
+
+                $scoreCol = 'score' . $columnIndex;
+
+                // ✅ 1. Update main results table
+                DB::table('results')
+                    ->where('admission_no', $studentId)
+                    ->where('class', $level)
+                    ->where('semester', $semester)
+                    ->where('session1', $admissionYear)
+                    ->update([$scoreCol => $resitScore]);
+
+                // ✅ 2. Insert into result_resits table
+                DB::table('result_resits')->insert([
+                    'admission_no' => $studentId,
+                    'student_name' => trim(
+                        ($result->surname ?? '') . ' ' .
+                        ($result->first_name ?? '') . ' ' .
+                        ($result->other_name ?? '')
+                    ),
+                    'class'        => $level,
+                    'semester'     => $semester,
+                    'course_title' => $courseTitle,
+                    'course_code'  => $courseCode,
+                    'failed_score' => $failedScore,
+                    'resit_score'  => $resitScore,
+                    'session1'     => $admissionYear,
+                    'created_at'   => now(),
+                    'updated_at'   => now(),
+                ]);
+            }
+        }
+
+        // Log Activity
+        if (auth()->check()) {
+            \App\Models\LogActivity::create([
+                'user_id' => auth()->id(),
+                'ip_address' => request()->ip(),
+                'activity' => "Student({$studentId}) resit scores updated by "
+                    . auth()->user()->last_name . ' '
+                    . auth()->user()->first_name,
+                'activity_date' => now(),
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Resit scores updated and recorded successfully.'
+        ]);
+    }
+
+
+    public function resultEntrySummary(Request $request)
+    {
+        // Log::info('fetchResultSummary called');
+        // Log::info('Payload received', $request->all());
+
+        $session = $request->input('session1');
+
+        if (!$session) {
+            return response()->json(['error' => 'Session is required'], 422);
+        }
+
+        // Fetch programmes with their start_level and duration
+        $programmes = DB::table('course_study_all')
+            ->select('department', 'start_level', 'duration')
+            ->distinct()
+            ->get();
+
+        $semesters = ['First', 'Second'];
+
+        // Get all existing results for the session
+        $existing = DB::table('results')
+            ->select('course', 'class', 'semester', 'session1')
+            ->where('session1', $session)
+            ->whereNotNull('course')
+            ->whereNotNull('class')
+            ->whereNotNull('semester')
+            ->distinct()
+            ->get()
+            ->map(function ($row) {
+                return strtolower($row->course.'-'.$row->class.'-'.$row->semester);
+            })
+            ->toArray();
+
+        $data = [];
+
+        foreach ($programmes as $programme) {
+            // Dynamically generate levels based on start_level + duration
+            $levels = $this->generateLevels($programme->start_level, $programme->duration);
+
+            foreach ($levels as $level) {
+                foreach ($semesters as $semester) {
+                    $key = strtolower($programme->department.'-'.$level.'-'.$semester);
+                    $available = in_array($key, $existing);
+
+                    $data[] = [
+                        'programme' => $programme->department,
+                        'level'     => $level,
+                        'semester'  => $semester,
+                        'session'   => $session,
+                        'available' => $available,
+                    ];
+                }
+            }
+        }
+
+        // Log::info('Existing results', ['session' => $session, 'data' => $existing]);
+
+        return view('results.summary-modal', compact('data', 'session'));
+    }
+
+    public function fetchResultSummary(Request $request)
+    {      
+        $session = $request->input('session1');
+
+        if (!$session) {
+            return response()->json(['error' => 'Session is required'], 422);
+        }
+
+        // Fetch programmes with their start_level and duration
+        $programmes = DB::table('course_study_all')
+            ->select('department', 'start_level', 'duration')
+            ->distinct()
+            ->get();
+
+        $semesters = ['First', 'Second'];
+
+        // Get all existing results for the session
+        $existing = DB::table('result_computes')
+            ->select('course', 'class', 'semester', 'session1')
+            ->where('session1', $session)
+            ->whereNotNull('course')
+            ->whereNotNull('class')
+            ->whereNotNull('semester')
+            ->distinct()
+            ->get()
+            ->map(function ($row) {
+                return strtolower($row->course.'-'.$row->class.'-'.$row->semester);
+            })
+            ->toArray();
+
+        $data = [];
+
+        foreach ($programmes as $programme) {
+            // Dynamically generate levels based on start_level + duration
+            $levels = $this->generateLevels($programme->start_level, $programme->duration);
+
+            foreach ($levels as $level) {
+                foreach ($semesters as $semester) {
+                    $key = strtolower($programme->department.'-'.$level.'-'.$semester);
+                    $available = in_array($key, $existing);
+
+                    $data[] = [
+                        'programme' => $programme->department,
+                        'level'     => $level,
+                        'semester'  => $semester,
+                        'session'   => $session,
+                        'available' => $available,
+                    ];
+                }
+            }
+        }
+
+        Log::info('Existing results', ['session' => $session, 'data' => $existing]);
+
+        return view('results.summary-modal-compute', compact('data', 'session'));
+    }
+
+    /**
+     * Generate levels based on start level and duration
+     */
+    private function generateLevels($start, $duration)
+    {
+        $levels = [];
+
+        // Handle numeric levels (100, 200, 300, etc.)
+        if (is_numeric($start)) {
+            $start = (int) $start;
+            for ($i = 0; $i < $duration; $i++) {
+                $levels[] = (string) ($start + ($i * 100));
+            }
+        } else {
+            // Handle non-numeric: NDI, HNDI
+            $map = [
+                'NDI'   => ['NDI', 'NDII'],
+                'HNDI'  => ['HNDI', 'HNDII'],
+            ];
+
+            if (isset($map[$start])) {
+                $levels = array_slice($map[$start], 0, $duration);
+            }
+        }
+
+        return $levels;
+    }
+
+    public function getPassMark()
+    {
+        $record = ResultPassMark::first();
+
+        return response()->json([
+            'pass_mark' => $record ? $record->pass_mark : 0
+        ]);
+    }
+
+    public function savePassMark(Request $request)
+    {
+        $request->validate([
+            'pass_mark' => 'required|numeric|min:0'
+        ]);
+
+        ResultPassMark::updateOrCreate(
+            ['id' => 1], 
+            ['pass_mark' => $request->pass_mark]
+        );
+
+        //---Log Activity------
+                if (auth()->check()) {
+                    \App\Models\LogActivity::create([
+                        'user_id' => auth()->id(),
+                        'ip_address' => request()->ip(),
+                        'activity' => 'Grading System pass-mark set by ' . auth()->user()->last_name . ' '. auth()->user()->first_name,
+                        'activity_date' => now(),
+                    ]);
+                }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pass mark saved successfully.'
+        ]);
+    }
+
+
+    public function deleteResults(Request $request)
+    {
+        $programme = $request->input('programme');
+        $admissionYear = $request->input('admission_year');
+        $level = $request->input('level');
+        $semester = $request->input('semester');
+    
+        $deleted = Result::where('course', $programme)
+            ->where('session1', $admissionYear)
+            ->where('class', $level)
+            ->where('semester', $semester)
+            ->delete();
+            
+            //---Log Activity------
+                if (auth()->check()) {
+                    \App\Models\LogActivity::create([
+                        'user_id' => auth()->id(),
+                        'ip_address' => request()->ip(),
+                        'activity' => 'Results deleted by ' . auth()->user()->last_name . ' '. auth()->user()->first_name,
+                        'activity_date' => now(),
+                    ]);
+                }
+    
+        return response()->json([
+            'message' => $deleted ? 'Results deleted successfully.' : 'No results found to delete.'
+        ]);
+    }
+
+
+}

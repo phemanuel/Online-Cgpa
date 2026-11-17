@@ -1,0 +1,5 @@
+[28-Aug-2025 10:58:35 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'r.student_full_name' in 'SET' in /home/oyschste/public_html/result/update_names.php:29
+Stack trace:
+#0 /home/oyschste/public_html/result/update_names.php(29): mysqli->query()
+#1 {main}
+  thrown in /home/oyschste/public_html/result/update_names.php on line 29

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>E-Result :: Password Setup</title>
+	<!-- Mobile Specific Metas -->
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	<!-- Font-->
+	<link rel="stylesheet" type="text/css" href="{{asset('login/css/opensans-font.css')}}">
+	<link rel="stylesheet" type="text/css" href="{{asset('login/fonts/line-awesome/css/line-awesome.min.css')}}">
+	<!-- Jquery -->
+	<link rel="stylesheet" href="https://jqueryvalidation.org/files/demo/site-demos.css">
+	<!-- Main Style Css -->
+    <link rel="stylesheet" href="{{asset('login/css/style.css')}}"/>
+	<link href="{{asset('loginback/vendor/images/favicon.png')}}" rel="icon">
+    <style type="text/css">
+
+.style1 {color: #000000}
+
+    </style>
+    <style>
+        body {
+          background-image: url({{asset('login/images/login-bg.jpg')}});
+            /* Additional styling */
+            background-size: cover; /* Adjust as needed */
+            background-repeat: no-repeat; /* Adjust as needed */
+        }
+    .style2 {
+	font-size: 12px;
+	font-weight: bold;
+}
+    .style3 {font-size: 12px}
+    </style>
+	<style>
+    /* Success Alert */
+    .alert.alert-success {
+        background-color: #28a745; /* Green background color */
+        color: #fff; /* White text color */
+        padding: 10px; /* Padding around the text */
+        border-radius: 5px; /* Rounded corners */
+    }
+
+    /* Error Alert */
+    .alert.alert-danger {
+        background-color: #dc3545; /* Red background color */
+        color: #fff; /* White text color */
+        padding: 10px; /* Padding around the text */
+        border-radius: 5px; /* Rounded corners */
+    }
+</style>
+</head>
+<body class="form-v7">
+	<div class="page-content">
+		<div class="form-v7-content">
+	  <div class="form-left">
+				<img src="{{asset('login/images/form-v7.jpg')}}" alt="form">
+				<p class="text-1 style1">&nbsp;</p>		
+			</div>
+			<form class="form-detail" action="{{ route('student-setup-password.save') }}" method="post" id="myform">
+        @csrf
+            <h2><strong><u>Password Setup</u></strong></h2>
+            
+            <br>	
+            @if(session('success'))
+						<div class="alert alert-success">
+							{{ session('success') }}
+						</div>
+          @elseif(session('error'))
+						<div class="alert alert-danger">
+							{{ session('error') }}
+						</div>
+						@endif			
+				
+                        <div class="form-row">
+                        <label>Matric Number</label>
+                        <input type="text" class="form-control" value="{{ $matricNo }}" readonly>
+                        </div>
+
+				<div class="form-row">
+                            <label>Password </label>
+                            <div class="input-group">
+                                <input type="password" id="password" name="password" class="form-control">
+                                <div class="input-group-append">
+                                    <span class="input-group-text" onclick="togglePassword('password', this)" style="cursor:pointer;">
+                                        👁️
+                                    </span>
+                                </div>
+                            </div>
+                            @error('password')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+                        <div class="form-row">
+                            <label>Confirm Password </label>
+                            <div class="input-group">
+                                <input type="password" id="password_confirmation" name="password_confirmation" class="form-control">
+                                <div class="input-group-append">
+                                    <span class="input-group-text" onclick="togglePassword('password', this)" style="cursor:pointer;">
+                                        👁️
+                                    </span>
+                                </div>
+                            </div>
+                            @error('passwordConfirmation')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+        <!-- <p><a href="{{ route('password.request') }}">Forgot Password?</a> </p>			 -->
+				<div class="form-row-last">
+					<input type="submit"  class="register" value="Save Password">					
+			  </div>
+              <div class="form-row-last">
+              <!-- <p><span class="style3">Don't have an account,<a href="{{route('signup')}}" class="style2">Sign Up</a></span></p> -->
+              </div>
+                  
+		    </form>         
+        
+</div>
+	
+		
+</body>
+</html>
+
+<script>
+function togglePassword(fieldId, iconElement) {
+    const input = document.getElementById(fieldId);
+    const isPassword = input.type === "password";
+    input.type = isPassword ? "text" : "password";
+    iconElement.innerText = isPassword ? "🙈" : "👁️";
+}
+</script>

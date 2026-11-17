@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<!-- index.html  21 Nov 2019 03:44:50 GMT -->
+<head>
+  <meta charset="UTF-8">
+  <meta content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" name="viewport">
+  <title>E-result :: Resit</title>
+  <!-- General CSS Files -->
+  <link rel="stylesheet" href="{{asset('dashboard/assets/css/app.min.css')}}">
+  <!-- Template CSS -->
+  <link rel="stylesheet" href="{{asset('dashboard/assets/css/style.css')}}">
+  <link rel="stylesheet" href="{{asset('dashboard/assets/css/components.css')}}">
+  <!-- Custom style CSS -->
+  <link rel="stylesheet" href="{{asset('dashboard/assets/css/custom.css')}}">
+  <link rel='shortcut icon' type='image/x-icon' href="{{asset('dashboard/assets/img/favicon.png')}}" />
+  <style>
+    .black-link {
+    color: black;
+    font-weight: bold;
+    }
+
+    .black-link:hover {
+        color: black;
+
+    }
+  </style>
+</head>
+
+<body>
+  <!-- <div class="loader"></div> -->
+  <div id="app">
+    <div class="main-wrapper main-wrapper-1">
+      <div class="navbar-bg"></div>
+      <nav class="navbar navbar-expand-lg main-navbar sticky">
+        <div class="form-inline mr-auto">
+          <ul class="navbar-nav mr-3">
+            <li><a href="#" data-toggle="sidebar" class="nav-link nav-link-lg
+									collapse-btn"> <i data-feather="align-justify"></i></a></li>
+            <li><a href="#" class="nav-link nav-link-lg fullscreen-btn">
+                <i data-feather="maximize"></i>
+              </a></li>
+           
+          </ul>
+        </div><ul class="navbar-nav navbar-right">        
+          <li class="dropdown"><a href="#" data-toggle="dropdown"
+              class="nav-link dropdown-toggle nav-link-lg nav-link-user"> <img alt="image" src="{{ asset('profile_pictures/'. auth()->user()->image) }}" alt="Profile Picture"
+                class="user-img-radious-style"> <span class="d-sm-none d-lg-inline-block"></span></a>
+            <div class="dropdown-menu dropdown-menu-right pullDown">
+              <div class="dropdown-title">Hello {{auth()->user()->first_name}}</div> 
+              <a href="{{ route('admin-account-setting', ['id' => auth()->user()->id]) }}" class="dropdown-item has-icon"> <i class="fas fa-cog"></i>
+                Account Settings
+              </a>
+              <div class="dropdown-divider"></div>
+              <a href="{{route('logout')}}" class="dropdown-item has-icon text-danger"> <i class="fas fa-sign-out-alt"></i>
+                Logout
+              </a>
+            </div>
+          </li>
+        </ul>
+      </nav>
+      <div class="main-sidebar sidebar-style-2">
+        <aside id="sidebar-wrapper">
+          <div class="sidebar-brand">
+            <a href="{{route('admin-dashboard')}}"> <img alt="image" src="{{asset('dashboard/assets/img/logo.png')}}" class="header-logo" /> <span
+                class="logo-name">E-Result</span>
+            </a>
+          </div>
+          @include('partials.sidebar')
+        </aside>
+      </div>
+      <!-- Main Content -->
+      <div class="main-content">
+        <section class="section">
+        <div class="row">
+                    <div class="col-12">
+                      <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb bg-dark text-white-all d-flex justify-content-between overflow-auto" style="white-space: nowrap;">
+                  @if(auth()->user()->user_type_status == 1)
+                  <li class="breadcrumb-item active">
+                    <a href="{{route('admin-dashboard')}}"><i class="fas fa-home"></i> Dashboard</a>
+                  </li>
+                  <li class="breadcrumb-item">
+                    <a href="{{route('class-list')}}"><i class="fas fa-chalkboard-teacher"></i> Class List</a>
+                  </li>
+                  <li class="breadcrumb-item dropdown" aria-current="page">
+                    <a href="{{route('student-menu')}}"><i class="fas fa-user-graduate"></i> Student</a>         
+                  </li>
+                  <li class="breadcrumb-item" aria-current="page">
+                    <a href="{{route('result-menu')}}"><i class="fas fa-poll"></i> Result</a>                   
+                  </li>
+                  <li class="breadcrumb-item">
+                    <a href="{{route('course-setup')}}"><i class="fas fa-book"></i> Course</a>
+                  </li>
+                  <li class="breadcrumb-item">
+                    <a href="{{route('hod-setup')}}"><i class="fas fa-user-tie"></i> HOD</a>
+                  </li>        
+                  <li class="breadcrumb-item">
+                    <a href="{{route('grading')}}"><i class="fas fa-clipboard-list"></i> Grading System</a>
+                  </li>
+                  <li class="breadcrumb-item">
+                    <a href="{{route('score-sheet')}}"><i class="fas fa-file-alt"></i> Score Sheet</a>
+                  </li>     
+                  <li class="breadcrumb-item">
+                    <a href="{{route('transcript-request')}}"><i class="fas fa-file-signature"></i> Transcript Request</a>
+                  </li>
+                  <li class="breadcrumb-item">
+                    <a href="{{ route('admin-account-setting', ['id' => auth()->user()->id]) }}"><i class="fas fa-cogs"></i> Account Setting</a>
+                  </li>   
+                  <li class="breadcrumb-item">
+                    <a href="{{route('user-menu')}}"><i class="fas fa-users"></i> Users</a>
+                  </li> 
+                  @elseif(auth()->user()->user_type_status == 2)
+                  <li class="breadcrumb-item active">
+                    <a href="{{route('admin-dashboard')}}"><i class="fas fa-home"></i> Dashboard</a>
+                  </li>
+                  <li class="breadcrumb-item">
+                    <a href="{{route('class-list')}}"><i class="fas fa-chalkboard-teacher"></i> Class List</a>
+                  </li>
+                  <li class="breadcrumb-item" aria-current="page">
+                    <a href="{{route('student-menu')}}"><i class="fas fa-user-graduate"></i> Student</a>         
+                  </li>
+                  <li class="breadcrumb-item" aria-current="page">
+                    <a href="{{route('result-menu')}}"><i class="fas fa-poll"></i> Result</a>                   
+                  </li>
+                  <li class="breadcrumb-item">
+                    <a href="{{route('course-setup')}}"><i class="fas fa-book"></i> Course</a>
+                  </li>
+                  <li class="breadcrumb-item">
+                    <a href="{{route('hod-setup')}}"><i class="fas fa-user-tie"></i> HOD</a>
+                  </li>        
+                  <li class="breadcrumb-item">
+                    <a href="{{route('grading')}}"><i class="fas fa-clipboard-list"></i> Grading System</a>
+                  </li>
+                  <li class="breadcrumb-item">
+                    <a href="{{route('score-sheet')}}"><i class="fas fa-file-alt"></i> Score Sheet</a>
+                  </li>     
+                  <li class="breadcrumb-item">
+                    <a href="{{route('transcript-request')}}"><i class="fas fa-file-signature"></i> Transcript Request</a>
+                  </li>
+                  <li class="breadcrumb-item">
+                    <a href="{{ route('admin-account-setting', ['id' => auth()->user()->id]) }}"><i class="fas fa-cogs"></i> Account Setting</a>
+                  </li>   
+                  <li class="breadcrumb-item">
+                    <a href="{{route('user-menu')}}"><i class="fas fa-users"></i> Users</a>
+                  </li> 
+                  @elseif(auth()->user()->user_type_status == 3)
+                  <li class="breadcrumb-item active">
+                    <a href="{{route('admin-dashboard')}}"><i class="fas fa-home"></i> Dashboard</a>
+                  </li>
+                  <li class="breadcrumb-item">
+                    <a href="{{route('class-list')}}"><i class="fas fa-chalkboard-teacher"></i> Class List</a>
+                  </li>                  
+                  <li class="breadcrumb-item" aria-current="page">
+                    <a href="{{route('result-menu')}}"><i class="fas fa-poll"></i> Result</a>                   
+                  </li>
+                  <li class="breadcrumb-item">
+                    <a href="{{route('course-setup')}}"><i class="fas fa-book"></i> Course</a>
+                  </li> 
+                  <li class="breadcrumb-item">
+                    <a href="{{ route('admin-account-setting', ['id' => auth()->user()->id]) }}"><i class="fas fa-cogs"></i> Account Setting</a>
+                  </li>
+                  @elseif(auth()->user()->user_type_status == 4)
+                  <li class="breadcrumb-item active">
+                    <a href="{{route('admin-dashboard')}}"><i class="fas fa-home"></i> Dashboard</a>
+                  </li>                  
+                  <li class="breadcrumb-item" aria-current="page">
+                    <a href="{{route('student-result')}}"><i class="fas fa-poll"></i> Result</a>                   
+                  </li>                   
+                  <li class="breadcrumb-item">
+                    <a href="{{route('user-request')}}"><i class="fas fa-file-signature"></i> Request Transcript</a>
+                  </li>
+                  <li class="breadcrumb-item">
+                    <a href="{{ route('account-setting', ['id' => auth()->user()->id]) }}"><i class="fas fa-cogs"></i> Account Setting</a>
+                  </li>   
+                  <li class="breadcrumb-item">
+                    <a href="{{route('contact-us')}}"><i class="fas fa-mail"></i> Contact Us</a>
+                  </li> 
+                  @endif
+                        </ol>
+                      </nav>
+                    </div>
+                  </div>
+        <div class="row ">
+              <div class="col-xl-3 col-lg-6">
+                <div class="card l-bg-green">
+                  <div class="card-statistic-3">
+                    <div class="card-icon card-icon-large"><i class="fa fa-award"></i></div>
+                    <div class="card-content">
+                      <h4 class="card-title">Result Resit</h4>
+                      <span><strong></strong></span>
+                      <div class="progress mt-1 mb-1" data-height="8">
+                        <div class="progress-bar l-bg-purple" role="progressbar" data-width="" aria-valuenow=""
+                          aria-valuemin="0" aria-valuemax=""></div>
+                      </div>
+                      
+                    </div>
+                  </div>
+                </div>
+              </div> 
+              
+            </div>
+            @if(session('success'))
+                    <div class="alert alert-success">
+                      {{ session('success') }}
+                    </div>
+                  @elseif(session('error'))
+                    <div class="alert alert-danger">
+                      {{ session('error') }}
+                    </div>
+                    @endif	
+                    <div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4>
+                    {{$programme}} - {{$acadSession}} | <a href="{{route('result-entry')}}"><i class="fas fa-arrow-left"></i> Back to Result Entry</a>
+                    <!-- <a href="javascript:void(0)" onclick="printAllStudents()" class="btn btn-outline-primary">
+                        <i class="fas fa-print"></i> Print All
+                    </a> -->
+                </h4>
+                <div class="card-header-form">
+                    <form>
+                        <div class="input-group">
+                        <input type="text" id="searchInput" class="form-control" placeholder="Search">
+                            <!-- <div class="input-group-btn">
+                                <button type="button" class="btn btn-primary" onclick="filterTable()"><i class="fas fa-search"></i></button>
+                            </div> -->
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                <table id="classListTable" class="table table-bordered">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Matric No</th>
+            <th>Full Name</th>
+            <th>Current Level/Semester</th>
+            <th>Failed Courses (Prev Level/Semester)</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach($studentsWithFailedCourses as $index => $entry)
+            <tr>
+                <td>{{ $index + 1 }}</td>
+                <td>{{ $entry['student']->admission_no }}</td>
+                <td>{{ $entry['student']->surname }} {{ $entry['student']->first_name }}</td>
+                <td>{{ $currentLevel ?? 'N/A' }} / {{ $currentSemester ?? 'N/A' }}</td>
+                <td>
+                    <strong>{{ $entry['previous_level'] }}/{{ $entry['previous_semester'] }}</strong><br>
+                    <ul>
+                        @foreach($entry['failed_courses'] as $course)
+                            <li>{{ $course }}</li>
+                        @endforeach
+                    </ul>
+                </td>
+                <td>
+                    <!-- Example action: View or Resit link -->
+                    <form action="{{ route('resit.process') }}" method="POST" style="display: inline-block;">
+                      @csrf
+                      <input type="hidden" name="admission_no" value="{{ $entry['student']->admission_no }}">
+                      <input type="hidden" name="currentLevel" value="{{ $currentLevel }}">
+                      <input type="hidden" name="currentSemester" value="{{ $currentSemester }}">
+                      <input type="hidden" name="programme" value="{{ $programme }}">
+                      <input type="hidden" name="acadSession" value="{{ $acadSession}}">
+                      
+                      <button type="submit" class="btn btn-sm btn-primary">
+                          <i class="fas fa-plus-circle"></i> Add Resit
+                      </button>
+                  </form>
+                </td>
+            </tr>
+        @endforeach
+    </tbody>
+</table>
+
+
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+          
+          
+        </section>
+
+       
+        <div class="settingSidebar">
+          <a href="javascript:void(0)" class="settingPanelToggle"> <i class="fa fa-spin fa-cog"></i>
+          </a>
+          <div class="settingSidebar-body ps-container ps-theme-default">
+            <div class=" fade show active">
+              <div class="setting-panel-header">Setting Panel
+              </div>
+              <div class="p-15 border-bottom">
+                <h6 class="font-medium m-b-10">Select Layout</h6>
+                <div class="selectgroup layout-color w-50">
+                  <label class="selectgroup-item">
+                    <input type="radio" name="value" value="1" class="selectgroup-input-radio select-layout" checked>
+                    <span class="selectgroup-button">Light</span>
+                  </label>
+                  <label class="selectgroup-item">
+                    <input type="radio" name="value" value="2" class="selectgroup-input-radio select-layout">
+                    <span class="selectgroup-button">Dark</span>
+                  </label>
+                </div>
+              </div>
+              <div class="p-15 border-bottom">
+                <h6 class="font-medium m-b-10">Sidebar Color</h6>
+                <div class="selectgroup selectgroup-pills sidebar-color">
+                  <label class="selectgroup-item">
+                    <input type="radio" name="icon-input" value="1" class="selectgroup-input select-sidebar">
+                    <span class="selectgroup-button selectgroup-button-icon" data-toggle="tooltip"
+                      data-original-title="Light Sidebar"><i class="fas fa-sun"></i></span>
+                  </label>
+                  <label class="selectgroup-item">
+                    <input type="radio" name="icon-input" value="2" class="selectgroup-input select-sidebar" checked>
+                    <span class="selectgroup-button selectgroup-button-icon" data-toggle="tooltip"
+                      data-original-title="Dark Sidebar"><i class="fas fa-moon"></i></span>
+                  </label>
+                </div>
+              </div>
+              <div class="p-15 border-bottom">
+                <h6 class="font-medium m-b-10">Color Theme</h6>
+                <div class="theme-setting-options">
+                  <ul class="choose-theme list-unstyled mb-0">
+                    <li title="white" class="active">
+                      <div class="white"></div>
+                    </li>
+                    <li title="cyan">
+                      <div class="cyan"></div>
+                    </li>
+                    <li title="black">
+                      <div class="black"></div>
+                    </li>
+                    <li title="purple">
+                      <div class="purple"></div>
+                    </li>
+                    <li title="orange">
+                      <div class="orange"></div>
+                    </li>
+                    <li title="green">
+                      <div class="green"></div>
+                    </li>
+                    <li title="red">
+                      <div class="red"></div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              <div class="p-15 border-bottom">
+                <div class="theme-setting-options">
+                  <label class="m-b-0">
+                    <input type="checkbox" name="custom-switch-checkbox" class="custom-switch-input"
+                      id="mini_sidebar_setting">
+                    <span class="custom-switch-indicator"></span>
+                    <span class="control-label p-l-10">Mini Sidebar</span>
+                  </label>
+                </div>
+              </div>
+              <div class="p-15 border-bottom">
+                <div class="theme-setting-options">
+                  <label class="m-b-0">
+                    <input type="checkbox" name="custom-switch-checkbox" class="custom-switch-input"
+                      id="sticky_header_setting">
+                    <span class="custom-switch-indicator"></span>
+                    <span class="control-label p-l-10">Sticky Header</span>
+                  </label>
+                </div>
+              </div>
+              <div class="mt-4 mb-4 p-3 align-center rt-sidebar-last-ele">
+                <a href="#" class="btn btn-icon icon-left btn-primary btn-restore-theme">
+                  <i class="fas fa-undo"></i> Restore Default
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <footer class="main-footer">
+        <div class="footer-left">
+          <a href="https://oyschst.edu.ng" target="_blank">Oyo State College of Health, Science and Technology</a></a>
+        </div>
+        <div class="footer-right">
+        </div>
+      </footer>
+    </div>
+  </div>
+  <!-- General JS Scripts -->
+  <script src="{{asset('dashboard/assets/js/app.min.js')}}"></script>
+  <!-- JS Libraies -->
+  <script src="{{asset('dashboard/assets/bundles/apexcharts/apexcharts.min.js')}}"></script>
+  <!-- Page Specific JS File -->
+  <script src="{{asset('dashboard/assets/js/page/index.js')}}"></script>
+  <!-- Template JS File -->
+  <script src="{{asset('dashboard/assets/js/scripts.js')}}"></script>
+  <!-- Custom JS File -->
+  <script src="{{asset('dashboard/assets/js/custom.js')}}"></script>
+</body>
+
+
+<!-- index.html  21 Nov 2019 03:47:04 GMT -->
+</html>
+<script>
+function printAllStudents() {
+    // Get the content of the hidden table
+    var printContents = document.getElementById('allStudentsTable').innerHTML;
+
+    // Create a hidden iframe
+    var iframe = document.createElement('iframe');
+    iframe.style.position = 'absolute';
+    iframe.style.top = '-10000px';
+    iframe.style.left = '-10000px';
+    document.body.appendChild(iframe);
+
+    // Write the content into the iframe
+    var doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(`
+        <html>
+            <head>
+                <title>Class List</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                    th, td { border: 1px solid black; padding: 8px; text-align: left; }
+                    th { background-color: #f2f2f2; }
+                </style>
+            </head>
+            <body>                
+                ${printContents}
+            </body>
+        </html>
+    `);
+    doc.close();
+
+    // Trigger the print dialog
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+
+    // Remove the iframe after printing
+    setTimeout(() => {
+        document.body.removeChild(iframe);
+    }, 1000);
+}
+</script>
+
+<script>
+    // JavaScript for filtering the table
+    function filterTable() {
+        const input = document.getElementById('searchInput').value.toLowerCase();
+        const table = document.getElementById('classListTable');
+        const rows = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < rows.length; i++) { // Start from 1 to skip the header row
+            const cells = rows[i].getElementsByTagName('td');
+            let match = false;
+
+            // Loop through all cells in the row
+            for (let j = 0; j < cells.length; j++) {
+                if (cells[j] && cells[j].innerText.toLowerCase().includes(input)) {
+                    match = true;
+                    break;
+                }
+            }
+
+            // Toggle row visibility based on the match
+            rows[i].style.display = match ? '' : 'none';
+        }
+    }
+
+    // Optional: Add an event listener for real-time search
+    document.getElementById('searchInput').addEventListener('input', filterTable);
+</script>
+
+<script>
+    // JavaScript for filtering the table
+    function filterTable() {
+        const input = document.getElementById('searchInput').value.toLowerCase();
+        const table = document.getElementById('classListTable');
+        const rows = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < rows.length; i++) { // Start from 1 to skip the header row
+            const cells = rows[i].getElementsByTagName('td');
+            let match = false;
+
+            // Loop through all cells in the row
+            for (let j = 0; j < cells.length; j++) {
+                if (cells[j] && cells[j].innerText.toLowerCase().includes(input)) {
+                    match = true;
+                    break;
+                }
+            }
+
+            // Toggle row visibility based on the match
+            rows[i].style.display = match ? '' : 'none';
+        }
+    }
+
+    // Optional: Add an event listener for real-time search
+    document.getElementById('searchInput').addEventListener('input', filterTable);
+</script>
+
